@@ -22,6 +22,7 @@
 		"typescript": "4.4.4"
 	},
 	"dependencies": {
-		"jszip": "^3.10.0"
+		"jszip": "^3.10.0",
+		"lit-html": "^3.3.0"
 	}
 }
