@@ -3,12 +3,17 @@ import {synchronize} from "./src/sync";
 import {Host, RMFileTree, ScrybbleSettings, SyncDelta} from "./@types/scrybble";
 import {DEFAULT_SETTINGS, Settings} from "./src/settings";
 import {SCRYBBLE_FILETREE, ScrybbleFileTree} from "./src/ScrybbleFileTree";
+import loadLitComponents from "./src/Components/loadComponents";
+
+// only needs to happen once, ever.
+loadLitComponents()
 
 export default class Scrybble extends Plugin {
 	// @ts-ignore -- onload acts as a constructor.
 	public settings: ScrybbleSettings;
 
 	async onload() {
+
 		this.settings = await this.loadSettings()
 		this.addSettingTab(new Settings(this.app, this));
 

@@ -1,112 +1,9 @@
-import {getIcon, ItemView, Notice, Setting, WorkspaceLeaf} from "obsidian";
+import {ItemView, Notice, WorkspaceLeaf} from "obsidian";
 import Scrybble from "../main";
 import {html, nothing, render} from "lit-html";
-import {LitElement} from "lit-element";
 import {RMFileTree} from "../@types/scrybble";
 
-class RmFileTree extends LitElement {
-	protected createRenderRoot(): HTMLElement | DocumentFragment {
-		return this
-	}
 
-	static get properties() {
-		return {
-			tree: {type: Object},
-			cwd: {type: String}
-		}
-	}
-
-
-	handleClickFile({detail: {name, path}}) {
-	}
-
-	render() {
-		return html`
-			<div class="scrybble-filetree">
-				<div class="tree-item-self">
-					<div class="tree-item-inner">Current directory is ${this.tree.cwd}</div>
-				</div>
-
-				${this.tree.items.map((item) => {
-					if (item.type === "d") {
-						return html`
-							<rm-dir .name="${item.name}" .path="${item.path}"
-									}"></rm-dir>`;
-					} else if (item.type === "f") {
-						return html`
-							<rm-file .name="${item.name}" .path="${item.path}"
-									 @rm-click="${this.handleClickFile.bind(this)}"></rm-file>`;
-					}
-				})}
-			</div>`
-	}
-}
-
-customElements.define("rm-tree", RmFileTree)
-
-class RmDir extends LitElement {
-	static get properties() {
-		return {
-			name: {type: String},
-			path: {type: String}
-		}
-	}
-
-	render() {
-		return html`
-			<div class="tree-item" @click="${this._handleClick}" aria-label="Open folder">
-				<div class="tree-item-self is-clickable">
-					<span class="tree-item-icon">${getIcon('folder')}</span> ${this.name}
-				</div>
-			</div>`
-	}
-
-	protected createRenderRoot(): HTMLElement | DocumentFragment {
-		return this
-	}
-
-	private _handleClick() {
-		this.dispatchEvent(new CustomEvent('rm-click', {
-			detail: {name: this.name, path: this.path, type: 'd'},
-			bubbles: true,
-			composed: true
-		}));
-	}
-}
-
-customElements.define('rm-dir', RmDir)
-
-class RmFile extends LitElement {
-	static get properties() {
-		return {
-			name: {type: String},
-			path: {type: String}
-		}
-	}
-
-	render() {
-		return html`
-			<div class="tree-item" @click="${this._handleClick}" aria-label="Download file to your vault">
-				<div class="tree-item-self is-clickable">
-					<span class="tree-item-icon">${getIcon('file')}</span> ${this.name}
-				</div>
-			</div>`
-	}
-
-	protected createRenderRoot(): HTMLElement | DocumentFragment {
-		return this
-	}
-
-	private _handleClick() {
-		this.dispatchEvent(new CustomEvent('rm-click', {
-			detail: {name: this.name, path: this.path, type: 'f'},
-			bubbles: true,
-			composed: true
-		}));
-	}
-}
-
-customElements.define('rm-file', RmFile)
 
 export const SCRYBBLE_FILETREE = "SCRYBBLE_FILETREE";
 
@@ -175,10 +72,11 @@ export class ScrybbleFileTree extends ItemView {
 		try {
 			this.loading = true
 			this.tree = await this.plugin.fetchFileTree(this.cwd)
-			this.loading = false
 		} catch (e) {
 			this.error = "There's a problem loading your files."
 			this.errorHelp = "Please try refreshing in a minute or so, otherwise you can contact mail@scrybble.ink for support"
+		} finally {
+			this.loading = false
 		}
 		this.renderTree();
 	}
