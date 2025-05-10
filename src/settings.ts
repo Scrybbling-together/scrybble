@@ -36,35 +36,35 @@ export class Settings extends PluginSettingTab {
 		containerEl.createEl('h1', {text: 'Sync ReMarkable notes'});
 
 		if (access_token === null) {
-			new Setting(containerEl)
-				.setName('Login')
-				.setDesc('Login details')
-				.addText(text => text
-					.setPlaceholder('Enter your username')
-					.onChange((value) => {
-						username = value;
-					}))
-				.addText(text => {
-					text.setPlaceholder('Enter your password');
-					text.inputEl.setAttribute('type', 'password');
-					text.onChange((value) => {
-						password = value;
-					});
-				})
-				.addButton((button) => {
-					button.setButtonText('Log in');
-					button.onClick(async () => {
-						try {
-							const host = this.plugin.getHost();
-							const {access_token} = await fetchOAuthToken(host.endpoint, host.client_secret, username, password);
-							localStorage.setItem('scrybble_access_token', access_token);
-							this.display();
-						} catch (error) {
-							new Notice("Scrybble: Failed to log in, check your username and password")
-							console.error(error);
-						}
-					});
-				});
+			// new Setting(containerEl)
+			// 	.setName('Login')
+			// 	.setDesc('Login details')
+			// 	.addText(text => text
+			// 		.setPlaceholder('Enter your username')
+			// 		.onChange((value) => {
+			// 			username = value;
+			// 		}))
+			// 	.addText(text => {
+			// 		text.setPlaceholder('Enter your password');
+			// 		text.inputEl.setAttribute('type', 'password');
+			// 		text.onChange((value) => {
+			// 			password = value;
+			// 		});
+			// 	})
+			// 	.addButton((button) => {
+			// 		button.setButtonText('Log in');
+			// 		button.onClick(async () => {
+			// 			try {
+			// 				const host = this.plugin.getHost();
+			// 				const {access_token} = await fetchOAuthToken(host.endpoint, host.client_secret, username, password);
+			// 				localStorage.setItem('scrybble_access_token', access_token);
+			// 				this.display();
+			// 			} catch (error) {
+			// 				new Notice("Scrybble: Failed to log in, check your username and password")
+			// 				console.error(error);
+			// 			}
+			// 		});
+			// 	});
 		} else {
 			new Setting(containerEl)
 				.setName('Log out')

@@ -3,6 +3,7 @@ import {fetchSyncDelta, synchronize} from "./src/sync";
 import {Host, ScrybbleSettings} from "./@types/scrybble";
 import {DEFAULT_SETTINGS, getAccessToken, Settings} from "./src/settings";
 import {SyncHistoryModal} from "./src/SyncHistoryModal";
+import migrations from "./src/migrations";
 
 export default class Scrybble extends Plugin {
 	// @ts-ignore -- onload acts as a constructor.
@@ -19,6 +20,8 @@ export default class Scrybble extends Plugin {
 		});
 
 		this.app.workspace.onLayoutReady(this.sync.bind(this));
+
+		migrations(this.app);
 	}
 
 	async sync() {
