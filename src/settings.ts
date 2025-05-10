@@ -1,6 +1,5 @@
 import {ScrybbleSettings} from "../@types/scrybble";
 import {App, Notice, PluginSettingTab, Setting} from "obsidian";
-import {fetchOAuthToken} from "./sync";
 import Scrybble from "../main";
 
 export const DEFAULT_SETTINGS: ScrybbleSettings = {
@@ -13,9 +12,6 @@ export const DEFAULT_SETTINGS: ScrybbleSettings = {
 	},
 }
 
-export function getAccessToken(): string | null {
-	return localStorage.getItem('scrybble_access_token');
-}
 
 export class Settings extends PluginSettingTab {
 	plugin: Scrybble;
@@ -27,7 +23,6 @@ export class Settings extends PluginSettingTab {
 
 	display(): void {
 		const {containerEl} = this;
-		const access_token = getAccessToken();
 
 		let password = "";
 		let username = "";
@@ -35,7 +30,7 @@ export class Settings extends PluginSettingTab {
 		containerEl.empty();
 		containerEl.createEl('h1', {text: 'Sync ReMarkable notes'});
 
-		if (access_token === null) {
+		if (this.plugin.access_token === null) {
 			new Setting(containerEl)
 				.setName('Login')
 				.setDesc('Login details')
@@ -56,7 +51,7 @@ export class Settings extends PluginSettingTab {
 					button.onClick(async () => {
 						try {
 							const host = this.plugin.getHost();
-							const {access_token} = await fetchOAuthToken(host.endpoint, host.client_secret, username, password);
+							const {access_token} = await this.plugin.fetchOAuthToken(username, password);
 							localStorage.setItem('scrybble_access_token', access_token);
 							this.display();
 						} catch (error) {

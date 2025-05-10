@@ -110,36 +110,3 @@ export async function* synchronize(syncResponse: ReadonlyArray<SyncDelta>, lastS
 	}
 }
 
-export async function fetchSyncDelta(base_url: string, access_token: string): Promise<ReadonlyArray<SyncDelta>> {
-	const response = await requestUrl({
-		url: `${base_url}/api/sync/delta`,
-		method: "GET",
-		headers: {
-			"Accept": "application/json",
-			"Authorization": `Bearer ${access_token}`
-		}
-	})
-	return response.json
-}
-
-export async function fetchOAuthToken(base_url: string, client_secret: string, username: string, password: string): Promise<{
-	access_token: string
-}> {
-	const response = await requestUrl({
-		url: `${base_url}/oauth/token`,
-		method: "POST",
-		headers: {
-			"Accept": "application/json, text/plain, */*",
-			"Content-Type": "application/json"
-		},
-		body: JSON.stringify({
-			"grant_type": "password",
-			"client_id": "1",
-			"client_secret": client_secret,
-			"username": username,
-			"password": password,
-			"scope": ""
-		})
-	})
-	return response.json
-}

@@ -13,3 +13,19 @@ export interface ScrybbleSettings {
 }
 
 export type SyncDelta = { id: number, download_url: string, filename: string };
+
+export interface RMTreeItem {
+	type: 'f' | 'd'
+	name: string
+	path: string
+}
+
+export interface File extends RMTreeItem {
+	type: 'f'
+}
+
+export interface Directory extends RMTreeItem {
+	type: 'd'
+}
+
+export type RMFileTree = { items: ReadonlyArray<RMTreeItem>, cwd: string };
