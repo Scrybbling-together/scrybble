@@ -112,7 +112,6 @@ export default class Scrybble extends Plugin {
 			},
 			body: JSON.stringify({ path })
 		})
-
 		return response.json
 	}
 

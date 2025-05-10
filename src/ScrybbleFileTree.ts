@@ -1,9 +1,7 @@
-import {ItemView, Notice, WorkspaceLeaf} from "obsidian";
+import {getIcon, ItemView, Notice, WorkspaceLeaf} from "obsidian";
 import Scrybble from "../main";
 import {html, nothing, render} from "lit-html";
 import {RMFileTree} from "../@types/scrybble";
-
-
 
 export const SCRYBBLE_FILETREE = "SCRYBBLE_FILETREE";
 
@@ -18,6 +16,12 @@ export class ScrybbleFileTree extends ItemView {
 	constructor(leaf: WorkspaceLeaf, plugin: Scrybble) {
 		super(leaf);
 		this.plugin = plugin;
+	}
+
+	async refresh() {
+		console.log('refreshing')
+		await this.loadTree()
+		console.log('done refreshing')
 	}
 
 	async handleClickFileOrFolder({detail: {name, path, type}}) {
@@ -47,6 +51,12 @@ export class ScrybbleFileTree extends ItemView {
 				<div class="tree-item-self">
 					<h1 class="tree-item-inner">Scrybble reMarkable sync</h1>
 				</div>
+				<div class="nav-header">
+					<div class="nav-buttons-container">
+						<div class="clickable-icon" aria-label="refresh" @click="${this.refresh.bind(this)}"><span>${getIcon("refresh-cw")}</span></div>
+					</div>
+				</div>
+						
 				${error}
 				${loading}
 				${tree}
@@ -72,13 +82,16 @@ export class ScrybbleFileTree extends ItemView {
 		try {
 			this.loading = true
 			this.tree = await this.plugin.fetchFileTree(this.cwd)
+			this.error = null
+			this.errorHelp = null
 		} catch (e) {
-			this.error = "There's a problem loading your files."
+			console.dir(e)
+			this.error = `There's a problem loading your files - response code ${e.status}.`
 			this.errorHelp = "Please try refreshing in a minute or so, otherwise you can contact mail@scrybble.ink for support"
 		} finally {
 			this.loading = false
+			this.renderTree()
 		}
-		this.renderTree();
 	}
 
 	onUnload() {
