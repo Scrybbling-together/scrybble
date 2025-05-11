@@ -1,0 +1,158 @@
+/* Error display styles */
+.scrybble-error {
+	padding: var(--size-4-4);
+	background-color: var(--background-modifier-error-rgb, rgba(224, 49, 71, 0.05));
+	border-radius: var(--radius-m);
+	margin-bottom: var(--size-4-4);
+
+	& h3 {
+		color: var(--text-error);
+		margin: 0 0 var(--size-4-2);
+	}
+
+	& p {
+		color: var(--text-muted);
+		margin: 0 0 var(--size-4-2);
+	}
+
+	& p:last-child {
+		color: var(--text-accent);
+		margin: 0;
+	}
+}
+
+/* Main container */
+.scrybble-container {
+	padding: var(--size-4-4);
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Header with refresh button */
+.scrybble-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: var(--size-4-4);
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding-bottom: var(--size-4-2);
+
+	& h3 {
+		margin: 0;
+		font-weight: var(--font-semibold);
+	}
+}
+
+.scrybble-refresh-button {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+}
+
+.scrybble-icon {
+	height: 16px;
+	width: 16px;
+}
+
+/* Sync history content area */
+.scrybble-content {
+	flex: 1;
+	overflow-y: auto;
+}
+
+.scrybble-sync-history {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-4);
+}
+
+.scrybble-sync-item {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	gap: var(--size-4-3);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-radius: var(--radius-s);
+	background-color: var(--background-secondary);
+}
+
+.scrybble-sync-item-completed {
+	border-left: 3px solid var(--color-green);
+}
+
+.scrybble-sync-item-error {
+	border-left: 3px solid var(--color-red);
+}
+
+.scrybble-sync-item-progress {
+	border-left: 3px solid var(--color-orange);
+}
+
+.scrybble-sync-date {
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	white-space: nowrap;
+}
+
+.scrybble-sync-filename {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: var(--font-medium);
+}
+
+.scrybble-sync-status {
+	padding: var(--size-2-2) var(--size-4-2);
+	border-radius: var(--radius-s);
+	font-size: var(--font-smaller);
+	white-space: nowrap;
+}
+
+.scrybble-sync-status-completed {
+	background-color: rgba(var(--color-green-rgb), 0.1);
+	color: var(--color-green);
+}
+
+.scrybble-sync-status-error {
+	background-color: rgba(var(--color-red-rgb), 0.1);
+	color: var(--color-red);
+}
+
+.scrybble-sync-status-progress {
+	background-color: rgba(var(--color-orange-rgb), 0.1);
+	color: var(--color-orange);
+}
+
+.scrybble-empty-state {
+	padding: var(--size-4-6);
+	color: var(--text-muted);
+	text-align: center;
+	background-color: var(--background-secondary);
+	border-radius: var(--radius-m);
+}
+
+/* Pagination controls */
+.scrybble-pagination {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: var(--size-4-2) 0;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.scrybble-page-info {
+	color: var(--text-muted);
+}
+
+/* Loading indicator */
+.scrybble-loading {
+	display: flex;
+	justify-content: center;
+	padding: var(--size-4-8);
+}
+
+.scrybble-spinner {
+	animation: rotate 2s linear infinite;
+}
