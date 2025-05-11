@@ -6,6 +6,7 @@
 		"module": "ES2020",
 		"target": "ES2017",
 		"allowJs": false,
+		"experimentalDecorators": true,
 		"strict": true,
 		"noImplicitAny": true,
 		"moduleResolution": "node",

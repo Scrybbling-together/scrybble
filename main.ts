@@ -1,8 +1,8 @@
 import {Notice, Plugin, requestUrl, WorkspaceLeaf} from 'obsidian';
 import {synchronize} from "./src/sync";
-import {Host, RMFileTree, ScrybbleSettings, SyncDelta} from "./@types/scrybble";
+import {Host, PaginatedResponse, RMFileTree, ScrybbleSettings, SyncDelta, SyncItem} from "./@types/scrybble";
 import {DEFAULT_SETTINGS, Settings} from "./src/settings";
-import {SCRYBBLE_FILETREE, ScrybbleFileTree} from "./src/ScrybbleFileTree";
+import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
 import loadLitComponents from "./src/Components/loadComponents";
 
 // only needs to happen once, ever.
@@ -16,9 +16,9 @@ export default class Scrybble extends Plugin {
 		this.settings = await this.loadSettings()
 		this.addSettingTab(new Settings(this.app, this));
 
-		this.registerView(SCRYBBLE_FILETREE,
+		this.registerView(SCRYBBLE_VIEW,
 			(leaf) => {
-				return new ScrybbleFileTree(leaf, this);
+				return new ScrybbleView(leaf, this);
 			})
 
 		const syncHistory = this.addStatusBarItem();
@@ -35,7 +35,7 @@ export default class Scrybble extends Plugin {
 		const { workspace } = this.app;
 
 		let leaf: WorkspaceLeaf | null = null;
-		const leaves = workspace.getLeavesOfType(SCRYBBLE_FILETREE);
+		const leaves = workspace.getLeavesOfType(SCRYBBLE_VIEW);
 
 		if (leaves.length > 0) {
 			// A leaf with our view already exists, use that
@@ -44,7 +44,7 @@ export default class Scrybble extends Plugin {
 			// Our view could not be found in the workspace, create a new leaf
 			// in the right sidebar for it
 			leaf = workspace.getRightLeaf(false);
-			await leaf.setViewState({ type: SCRYBBLE_FILETREE, active: true });
+			await leaf.setViewState({ type: SCRYBBLE_VIEW, active: true });
 		}
 
 		// "Reveal" the leaf in case it is in a collapsed sidebar
@@ -97,6 +97,19 @@ export default class Scrybble extends Plugin {
 			}
 		})
 		return response.json
+	}
+
+	async fetchPaginatedSyncHistory(page: number = 1): Promise<PaginatedResponse<SyncItem>> {
+		const response = await requestUrl({
+			url: `${this.base_url}/api/sync/inspect-sync?paginated=true&page=${page}`,
+			method: "GET",
+			headers: {
+				"Authorization": `Bearer ${this.access_token}`,
+				"Content-Type": "application/json"
+			}
+		});
+
+		return response.json;
 	}
 
 	async fetchFileTree(path: string="/"): Promise<RMFileTree> {
