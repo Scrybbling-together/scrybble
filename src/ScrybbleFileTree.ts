@@ -21,6 +21,7 @@ export class ScrybbleFileTree extends ItemView {
 
 	async refresh() {
 		await this.loadTree()
+		await this.renderTree()
 	}
 
 	async handleClickFileOrFolder({detail: {name, path, type}}) {
@@ -95,7 +96,7 @@ export class ScrybbleFileTree extends ItemView {
 
 			await this.loadTree()
 		} catch (e) {
-			this.error = ScrybbleErrorHandler.handleError("SERVER_CONNECTION_ERROR", e)
+			this.error = ScrybbleErrorHandler.handleError("TREE_LOADING_ERROR", e)
 		} finally {
 			this.loading = false
 			this.renderTree()

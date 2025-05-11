@@ -53,6 +53,9 @@ export class ScrybbleErrorHandler {
 	public static handleError(error_name: keyof typeof errors, e?: Error) {
 		console.log(`Scrybble ${error_name} occurred.`)
 		console.dir(e)
+		if ("message" in e && e.message.includes("ERR_CONNECTION_REFUSED")) {
+			return errors["SERVER_CONNECTION_ERROR"](e)
+		}
 		return errors[error_name](e)
 	}
 }
