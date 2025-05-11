@@ -90,7 +90,8 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 		const syncHistory = !this.error && this.syncItems.length ? html`
 			<div class="scrybble-sync-history">
 				${this.syncItems.map(item => html`
-					<div class="scrybble-sync-item ${item.completed ? 'scrybble-sync-item-completed' : (item.error ? 'scrybble-sync-item-error' : 'scrybble-sync-item-progress')}">
+					<div class="scrybble-sync-item">
+						<navigate-to-file-btn .plugin="${this.plugin}" .name="${item.filename}" .status="${item.completed ? "completed" : item.error ? "error" : "progress"}"></navigate-to-file-btn>
 						<div class="scrybble-sync-date">${item.created_at}</div>
 						<div class="scrybble-sync-filename" title="${item.filename}">${item.filename}</div>
 						<div class="scrybble-sync-status ${item.completed ? 'scrybble-sync-status-completed' : (item.error ? 'scrybble-sync-status-error' : 'scrybble-sync-status-progress')}">
@@ -143,3 +144,4 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 		return this
 	}
 }
+

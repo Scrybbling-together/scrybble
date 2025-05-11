@@ -9,12 +9,6 @@ import {ErrorMessage, ScrybbleLogger} from "../errorHandling/Errors";
 import {obfuscateString} from "../support";
 
 export class ScrybbleFileTreeComponent extends LitElement {
-	static styles = css`
-		:host {
-			display: block;
-			width: 100%;
-		}
-	`;
 	@property({type: Object})
 	plugin: Scrybble;
 

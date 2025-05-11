@@ -70,12 +70,54 @@
 
 .scrybble-sync-item {
 	display: grid;
-	grid-template-columns: auto 1fr auto;
+	grid-template-columns: var(--size-4-5) auto 1fr auto;
 	align-items: center;
 	gap: var(--size-4-3);
-	padding: var(--size-4-2) var(--size-4-3);
+	padding: var(--size-4-3);
 	border-radius: var(--radius-s);
 	background-color: var(--background-secondary);
+	overflow: hidden;
+	height: var(--size-4-12)
+}
+
+.scrybble-navigate-btn {
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	cursor: pointer;
+	padding: var(--size-4-2) 0;
+	color: var(--text-on-accent);
+	transition: opacity 0.2s ease;
+
+	border-top-left-radius: var(--radius-m);
+	border-bottom-left-radius: var(--radius-m);
+
+	&:hover {
+		opacity: 0.8;
+	}
+	&.completed {
+		background-color: rgba(var(--color-green-rgb), 0.2);
+		color: var(--color-green);
+	}
+	&.error {
+		background-color: rgba(var(--color-red-rgb), 0.2);
+		color: var(--color-red);
+	}
+	&.progress {
+		background-color: rgba(var(--color-orange-rgb), 0.2);
+		color: var(--color-orange);
+	}
+
+	& span {
+		opacity: 0.9;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+	}
 }
 
 .scrybble-sync-item-completed {

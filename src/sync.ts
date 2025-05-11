@@ -1,32 +1,7 @@
 import {App, Notice, requestUrl, TFile} from "obsidian"
 import * as jszip from "jszip"
 import {SyncDelta} from "../@types/scrybble";
-
-/**
- * Dir paths always end with /
- * @param filePath
- */
-function dirPath(filePath: string): string {
-	const atoms = filePath.split("/")
-	const dirs = atoms.slice(0, atoms.length - 1)
-	return dirs.filter((a) => Boolean(a)).join("/") + "/"
-}
-
-function basename(filePath: string): string {
-	const atoms = filePath.split("/")
-	return atoms[atoms.length - 1]
-}
-
-function sanitizeFilename(filePath: string): string {
-	const tokens = ['*', '"', "\\", "/", "<", ">", ":", "|", "?"];
-
-	tokens.forEach((token) => {
-		const regex = new RegExp('\\' + token, 'g');
-		filePath = filePath.replace(regex, "_");
-	});
-
-	return filePath;
-}
+import {basename, dirPath, sanitizeFilename} from "./support";
 
 async function writeToFile(vault: App["vault"], filePath: string, data: ArrayBuffer) {
 	const file = vault.getAbstractFileByPath(filePath)

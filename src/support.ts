@@ -41,3 +41,32 @@ function shuffleArray(array) {
 		[array[i], array[j]] = [array[j], array[i]];
 	}
 }
+
+/**
+ * Dir paths always end with /
+ * @param filePath
+ */
+export function dirPath(filePath: string): string {
+	const atoms = filePath.split("/")
+	const dirs = atoms.slice(0, atoms.length - 1)
+	return dirs.filter((a) => Boolean(a)).join("/") + "/"
+}
+
+export function basename(filePath: string): string {
+	const atoms = filePath.split("/")
+	return atoms[atoms.length - 1]
+}
+
+export function sanitizeFilename(filePath: string, ignoreSlashes=false): string {
+	const tokens = ['*', '"', "\\", "<", ">", ":", "|", "?"];
+	if (!ignoreSlashes) {
+		tokens.push("/");
+	}
+
+	tokens.forEach((token) => {
+		const regex = new RegExp('\\' + token, 'g');
+		filePath = filePath.replace(regex, "_");
+	});
+
+	return filePath;
+}
