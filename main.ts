@@ -13,7 +13,6 @@ export default class Scrybble extends Plugin {
 	public settings: ScrybbleSettings;
 
 	async onload() {
-
 		this.settings = await this.loadSettings()
 		this.addSettingTab(new Settings(this.app, this));
 
@@ -66,7 +65,6 @@ export default class Scrybble extends Plugin {
 				}
 			} catch (e) {
 				new Notice("Scrybble: Failed to synchronize. Are you logged in?");
-				console.error(e);
 				return;
 			}
 		}
