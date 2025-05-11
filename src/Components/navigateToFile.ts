@@ -5,7 +5,6 @@ import {getIcon, Menu} from "obsidian";
 import Scrybble from "../../main";
 import {sanitizeFilename} from "../support";
 
-
 export class NavigateToFile extends LitElement {
 	@property({type: String})
 	name: string;
@@ -27,8 +26,6 @@ export class NavigateToFile extends LitElement {
 		const {pdf, md} = this.findFile();
 		const menu = new Menu();
 		const app = this.plugin.app;
-
-		// Add section for Markdown file
 
 		menu
 			.addItem(item => item.setTitle(`Markdown file${md == null ? " - doesn't exist" : ""}`).setIcon("file-text").setDisabled(true)).addSeparator()
@@ -100,7 +97,6 @@ export class NavigateToFile extends LitElement {
 		const pdfFilePath = rootFolder ? `${rootFolder}/${sanitizedName}.pdf` : `${sanitizedName}.pdf`
 		const mdFilePath = rootFolder ? `${rootFolder}/${sanitizedName}.md` : `${sanitizedName}.md`
 
-		// Use the proper API to find the file
 		const pdf = app.vault.getFileByPath(pdfFilePath);
 		const md = app.vault.getFileByPath(mdFilePath);
 		return {pdf, md};
