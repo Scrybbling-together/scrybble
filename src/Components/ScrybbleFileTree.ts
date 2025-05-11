@@ -74,15 +74,35 @@ export class ScrybbleFileTreeComponent extends LitElement {
 
 	render() {
 		const error = this.error ? html`
-			<div class="pane-empty">
-				<h2 style="color: var(--text-muted)">${this.error.title}</h2>
-				<p style="color: var(--text-muted)">${this.error.message}</p>
-				<p style="color: var(--text-warning)">${this.error.helpAction}</p>
+			<div class="scrybble-error" style="
+         padding: var(--size-4-4);
+         background-color: var(--background-modifier-error-rgb, rgba(224, 49, 71, 0.05));
+         border-radius: var(--radius-m);
+         margin-bottom: var(--size-4-4);
+      ">
+				<h3 style="color: var(--text-error); margin: 0 0 var(--size-4-2);">${this.error.title}</h3>
+				<p style="color: var(--text-muted); margin: 0 0 var(--size-4-2);">${this.error.message}</p>
+				<p style="color: var(--text-accent); margin: 0;">${this.error.helpAction}</p>
 			</div>` : nothing;
 
-		const loading = html`<div style="display: flex; margin-bottom: var(--size-4-4)">
-				<button ?disabled="${this.loading}" @click="${this.refresh}" class="clickable-icon">
-					<span class="tree-item-icon">${getIcon('refresh-ccw')}</span>&nbsp; ${this.loading? "Loading..." : "Refresh"}
+		const heading = html`
+			<div style="
+         display: flex; 
+         justify-content: space-between;
+         align-items: center;
+         margin-bottom: var(--size-4-4);
+         border-bottom: 1px solid var(--background-modifier-border);
+         padding-bottom: var(--size-4-2);
+      ">
+				<h3 style="margin: 0; font-weight: var(--font-semibold);">reMarkable file tree</h3>
+				<button
+					?disabled="${this.loading}"
+					@click="${this.refresh.bind(this)}"
+					class="mod-cta"
+					style="display: flex; align-items: center; gap: var(--size-4-1);"
+				>
+					<span class="tree-item-icon" style="height: 16px; width: 16px;">${getIcon('refresh-ccw')}</span>
+					${this.loading ? "Loading..." : "Refresh"}
 				</button>
 			</div>`;
 
@@ -90,8 +110,8 @@ export class ScrybbleFileTreeComponent extends LitElement {
 			<rm-tree .tree="${this.tree}" @rm-click="${this.handleClickFileOrFolder.bind(this)}"></rm-tree>` : nothing;
 
 		return html`
-			<div>
-				${loading}
+			<div style="padding: var(--size-4-4); height: 100%; display: flex; flex-direction: column;">
+				${heading}
 				${error}
 				${tree}
 			</div>
