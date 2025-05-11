@@ -126,6 +126,23 @@ export default class Scrybble extends Plugin {
 		return response.json
 	}
 
+	async downloadFile(filePath: string) {
+		const response = await requestUrl({
+			url: `${this.base_url}/api/sync/file`,
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"accept": "application/json",
+				"Authorization": `Bearer ${this.access_token}`
+			},
+			body: JSON.stringify({
+				file: filePath
+			})
+		});
+
+		return response.json
+	}
+
 	async fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready"> {
 		const response = await requestUrl({
 			url: `${this.base_url}/api/sync/onboardingState`,
@@ -161,6 +178,8 @@ export default class Scrybble extends Plugin {
 		})
 		return response.json
 	}
+
+
 
 	getHost(): Host {
 		if (this.settings.self_hosted) {

@@ -63,7 +63,7 @@ const errors = {
 	})
 } satisfies Record<string, ErrorHandler>;
 
-export class ScrybbleErrorHandler {
+export class ScrybbleLogger {
 	public static handleError(error_name: keyof typeof errors, e?: Error) {
 		console.log(`Scrybble ${error_name} occurred.`)
 		console.dir(e)
@@ -71,5 +71,9 @@ export class ScrybbleErrorHandler {
 			return errors["SERVER_CONNECTION_ERROR"](e)
 		}
 		return errors[error_name](e)
+	}
+
+	public static info(message: string) {
+		console.log(`Scrybble info: ${message}`)
 	}
 }

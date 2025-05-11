@@ -1,7 +1,7 @@
 import {getIcon, ItemView, WorkspaceLeaf} from "obsidian";
 import Scrybble from "../main";
 import {html, nothing, render} from "lit-html";
-import {ErrorMessage, ScrybbleErrorHandler} from "./errorHandling/Errors";
+import {ErrorMessage, ScrybbleLogger} from "./errorHandling/Errors";
 import {ScrybbleFileTreeComponent} from "./Components/ScrybbleFileTree";
 import {ScrybbleSyncHistoryComponent} from "./Components/SyncHistory";
 
@@ -26,7 +26,7 @@ export class ScrybbleView extends ItemView {
 
 	async onload() {
 		if (!this.plugin.access_token) {
-			this.error = ScrybbleErrorHandler.handleError("NOT_LOGGED_IN");
+			this.error = ScrybbleLogger.handleError("NOT_LOGGED_IN");
 			await this.renderView();
 			return;
 		}
@@ -34,12 +34,12 @@ export class ScrybbleView extends ItemView {
 		try {
 			const state = await this.plugin.fetchOnboardingState();
 			if (state !== "ready") {
-				this.error = ScrybbleErrorHandler.handleError("NOT_SETUP");
+				this.error = ScrybbleLogger.handleError("NOT_SETUP");
 				await this.renderView();
 				return;
 			}
 		} catch (e) {
-			this.error = ScrybbleErrorHandler.handleError("GENERAL_ERROR", e);
+			this.error = ScrybbleLogger.handleError("GENERAL_ERROR", e);
 		} finally {
 			await this.renderView();
 		}

@@ -1,7 +1,7 @@
 import {html, LitElement, nothing} from 'lit-element';
 import {property, state} from 'lit-element/decorators.js';
 import Scrybble from "../../main";
-import {ErrorMessage, ScrybbleErrorHandler} from "../errorHandling/Errors";
+import {ErrorMessage, ScrybbleLogger} from "../errorHandling/Errors";
 import {getIcon} from "obsidian";
 import {SyncItem} from "../../@types/scrybble";
 
@@ -43,7 +43,7 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 			this.total = response.total;
 			this.error = null;
 		} catch (e) {
-			this.error = ScrybbleErrorHandler.handleError("SYNC_HISTORY_ERROR", e);
+			this.error = ScrybbleLogger.handleError("SYNC_HISTORY_ERROR", e);
 		} finally {
 			this.loading = false;
 			this.requestUpdate();

@@ -1,0 +1,43 @@
+/**
+ * Replaces a random percentage of characters in a string with asterisks
+ * @param {string} str - The string to obfuscate
+ * @param {number} percentage - Percentage of characters to replace (0-100)
+ * @returns {string} The obfuscated string
+ */
+export function obfuscateString(str, percentage) {
+	// Validate inputs
+	if (typeof str !== 'string') return '';
+	if (typeof percentage !== 'number' || percentage < 0 || percentage > 100) {
+		throw new Error('Percentage must be a number between 0 and 100');
+	}
+
+	// Handle edge cases
+	if (str.length === 0 || percentage === 0) return str;
+	if (percentage === 100) return '*'.repeat(str.length);
+
+	// Convert string to array for manipulation
+	const chars = str.split('');
+
+	// Calculate how many characters to replace
+	const charsToReplace = Math.round((percentage / 100) * str.length);
+
+	// Create array of indices and shuffle it
+	const indices = Array.from({ length: str.length }, (_, i) => i);
+	shuffleArray(indices);
+
+	// Replace characters at the first charsToReplace indices
+	for (let i = 0; i < charsToReplace; i++) {
+		chars[indices[i]] = '*';
+	}
+
+	// Join back to string and return
+	return chars.join('');
+}
+
+// Fisher-Yates shuffle algorithm for randomizing indices
+function shuffleArray(array) {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
+}
