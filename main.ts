@@ -138,8 +138,9 @@ export default class Scrybble extends Plugin {
 				file: filePath
 			})
 		});
+		console.dir(response)
 
-		return response.json
+		return response
 	}
 
 	async fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready"> {

@@ -198,3 +198,35 @@
 .scrybble-spinner {
 	animation: rotate 2s linear infinite;
 }
+
+.error-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px;
+	background-color: var(--background-primary);
+	border-radius: 8px;
+	border: 1px solid var(--background-modifier-border);
+
+	& .error-title {
+		color: var(--text-error);
+		margin-top: 0;
+		margin-bottom: 8px;
+	}
+
+	& .error-message {
+		color: var(--text-normal);
+		margin-bottom: 8px;
+	}
+
+	& .error-help-action {
+		color: var(--text-muted);
+	}
+
+	& .error-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 8px;
+	}
+}
+

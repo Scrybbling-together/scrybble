@@ -5,6 +5,12 @@ interface ResponseError extends Error {
 	message: string;
 }
 
+/**
+ * @property title Say what happened
+ * @property message Provide reassurance, say why it happened and give a suggestion to fix it.
+ * @property helpAction Give a concrete way to reach support or report the error; give them a way out
+ * @property details Internal property for logging purposes, not relevant for end-users
+ */
 export type ErrorMessage = {
 	title: TemplateResult;
 	message: TemplateResult;

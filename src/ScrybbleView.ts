@@ -2,8 +2,6 @@ import {getIcon, ItemView, WorkspaceLeaf} from "obsidian";
 import Scrybble from "../main";
 import {html, nothing, render} from "lit-html";
 import {ErrorMessage, ScrybbleLogger} from "./errorHandling/Errors";
-import {ScrybbleFileTreeComponent} from "./Components/ScrybbleFileTree";
-import {ScrybbleSyncHistoryComponent} from "./Components/SyncHistory";
 
 export const SCRYBBLE_VIEW = "SCRYBBLE_VIEW";
 
@@ -45,16 +43,17 @@ export class ScrybbleView extends ItemView {
 		}
 	}
 
+	async errorRefresh() {
+		await this.onload()
+	}
+
 	async renderView() {
 		this.contentEl.style.display = "flex";
 		this.contentEl.style.flexDirection = "column";
 
 		const error = this.error ? html`
-			<div class="pane-empty">
-				<h2 style="color: var(--text-muted)">${this.error.title}</h2>
-				<p style="color: var(--text-muted)">${this.error.message}</p>
-				<p style="color: var(--text-warning)">${this.error.helpAction}</p>
-			</div>` : nothing;
+			<error-view .error="${this.error}" .actions="${[html`
+				<button class="retry" @click="${this.errorRefresh.bind(this)}">Refresh</button>`]}"/>` : nothing;
 
 		render(html`
 			<div class="nav-header">
