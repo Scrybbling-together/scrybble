@@ -1,5 +1,5 @@
 import {html, LitElement} from 'lit-element';
-import {customElement, property} from 'lit-element/decorators.js';
+import { property} from 'lit-element/decorators.js';
 import {States} from "../SyncJob";
 import {Notice} from "obsidian";
 import {render} from "lit-html";
@@ -13,30 +13,69 @@ export class SyncProgressIndicator extends LitElement {
 
 	render() {
 		return html`<div class="sync-progress">
-				<div class="title">Syncing <b>${this.filename}</b></div>
-				<div class="progress">
-					<div class="progress-line"></div>
+			<div class="title">Syncing <b>${this.filename}</b></div>
+			<div class="progress">
+				<div class="progress-line"></div>
 
-					<div class="stage ${this.getStageClass('sync')}">
-						<div class="stage-indicator">${this.getStageIcon('sync')}</div>
-						<div class="stage-label">Requesting Sync</div>
-					</div>
-
-					<div class="stage ${this.getStageClass('process')}">
-						<div class="stage-indicator">${this.getStageIcon('process')}</div>
-						<div class="stage-label">Processing File</div>
-					</div>
-
-					<div class="stage ${this.getStageClass('download')}">
-						<div class="stage-indicator">${this.getStageIcon('download')}</div>
-						<div class="stage-label">Downloading</div>
-					</div>
+				<div class="stage ${this.getStageClass('sync')}">
+					<div class="stage-indicator">${this.getStageIcon('sync')}</div>
+					<div class="stage-label">${this.getStageLabel('sync')}</div>
 				</div>
-			</div>`;
+
+				<div class="stage ${this.getStageClass('process')}">
+					<div class="stage-indicator">${this.getStageIcon('process')}</div>
+					<div class="stage-label">${this.getStageLabel('process')}</div>
+				</div>
+
+				<div class="stage ${this.getStageClass('download')}">
+					<div class="stage-indicator">${this.getStageIcon('download')}</div>
+					<div class="stage-label">${this.getStageLabel('download')}</div>
+				</div>
+			</div>
+		</div>`;
 	}
 
 	isRequestSyncCompleted() {
 		return this.getStageClass('sync') === 'stage-completed';
+	}
+
+	getStageLabel(stage: 'sync' | 'process' | 'download'): string {
+		switch (stage) {
+			case 'sync':
+				if (this.state === States.init) return 'Request Sync';
+				if (this.state === States.sync_requested) return 'Requesting Sync';
+				if (this.state === States.failed_to_process && this.getStageClass('sync') === 'stage-error')
+					return 'Failed to Request Sync';
+				if (this.getStageClass('sync') === 'stage-completed') return 'Requested Sync';
+				return 'Request Sync';
+
+			case 'process':
+				if (this.state === States.init || this.state === States.sync_requested)
+					return 'Process File';
+				if (this.state === States.processing || this.state === States.awaiting_processing)
+					return 'Processing File';
+				if (this.state === States.failed_to_process)
+					return 'Failed to Process File';
+				if (this.getStageClass('process') === 'stage-completed')
+					return 'Processed File';
+				return 'Process File';
+
+			case 'download':
+				if (this.state === States.init ||
+					this.state === States.sync_requested ||
+					this.state === States.processing ||
+					this.state === States.awaiting_processing)
+					return 'Download';
+				if (this.state === States.ready_to_download)
+					return 'Ready to Download';
+				if (this.state === States.downloading)
+					return 'Downloading';
+				if (this.state === States.downloaded)
+					return 'Downloaded';
+				// if (this.state === States.failed_to_download)
+				// 	return 'Failed to Download';
+				return 'Download';
+		}
 	}
 
 	getStageClass(stage: 'sync' | 'process' | 'download'): string {
@@ -62,6 +101,7 @@ export class SyncProgressIndicator extends LitElement {
 
 			case 'download':
 				if (this.state === States.downloading) return 'stage-waiting';
+				if (this.state === States.failed_to_download) return 'stage-error';
 				if (this.state === States.downloaded) return 'stage-completed';
 				return '';
 		}
@@ -79,11 +119,9 @@ export class SyncProgressIndicator extends LitElement {
 		return this
 	}
 }
-
 export class SyncProgressNotice {
 	private notice: Notice;
-	private readonly component: DocumentFragment;
-	private indicator: any; // The SyncProgressIndicator instance
+	private readonly indicator: SyncProgressIndicator; // The SyncProgressIndicator instance
 
 	constructor(filename: string) {
 		this.notice = new Notice("", 0);
