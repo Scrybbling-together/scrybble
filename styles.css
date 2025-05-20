@@ -230,3 +230,70 @@
 	}
 }
 
+.sync-progress {
+	margin: var(--size-4-4);
+
+	& .title {
+		margin-bottom: var(--size-4-4);
+		font-size: var(--font-ui-medium);
+	}
+
+	& .progress {
+		display: flex;
+		justify-content: space-between;
+		position: relative;
+		min-width: calc(var(--size-4-18) * 4);
+	}
+
+	& .stage {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		z-index: 1;
+		width: var(--size-4-18);
+		position: relative;
+	}
+
+	& .stage-indicator {
+		width: calc(var(--size-4-6) - 2px);
+		height: calc(var(--size-4-6) - 2px);
+		border-radius: 50%;
+		background-color: transparent;
+		border: 2px solid var(--background-secondary);
+		margin-bottom: var(--size-4-3);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 200ms ease-in-out;
+	}
+
+	& .stage-label {
+		font-size: var(--font-ui-small);
+		text-align: center;
+		width: 120%;
+		line-height: 1.3;
+	}
+
+	& .stage-label {
+		font-weight: var(--font-medium);
+		color: white;
+	}
+
+	& .stage-waiting .stage-indicator {
+		background-color: var(--background-secondary);
+		border-color: color-mix(in lab var(--background-secondary), black, 10%);
+		color: white;
+	}
+
+	& .stage-completed .stage-indicator {
+		background-color: var(--background-modifier-success);
+		border-color: color-mix(in lab var(--background-modifier-success), black, 10%);
+		color: white;
+	}
+
+	& .stage-error .stage-indicator {
+		background-color: var(--background-modifier-error);
+		border-color: color-mix(in lab var(--background-modifier-error), black, 10%);
+		color: white;
+	}
+}

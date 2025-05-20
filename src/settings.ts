@@ -10,6 +10,9 @@ export const DEFAULT_SETTINGS: ScrybbleSettings = {
 		endpoint: "",
 		client_secret: ""
 	},
+	sync_state: {
+
+	}
 }
 
 

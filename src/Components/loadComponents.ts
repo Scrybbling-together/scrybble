@@ -5,6 +5,7 @@ import {ScrybbleFileTreeComponent} from "./ScrybbleFileTree";
 import {ScrybbleSyncHistoryComponent} from "./SyncHistory";
 import {NavigateToFile} from "./navigateToFile";
 import {ErrorComponent} from "./ErrorComponent";
+import {SyncProgressIndicator} from "./SyncNotice";
 
 export default function loadLitComponents() {
 	customElements.define("rm-tree", RmFileTree)
@@ -14,4 +15,6 @@ export default function loadLitComponents() {
 	customElements.define('scrybble-sync-history', ScrybbleSyncHistoryComponent)
 	customElements.define('navigate-to-file-btn', NavigateToFile)
 	customElements.define('error-view', ErrorComponent)
+	customElements.define('sync-progress-indicator', SyncProgressIndicator)
+
 }

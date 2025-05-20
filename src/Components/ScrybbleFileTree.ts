@@ -41,15 +41,12 @@ export class ScrybbleFileTreeComponent extends LitElement {
 
 	async handleClickFileOrFolder({detail: {name, path, type}}) {
 		if (type === "f") {
-			const frag = createFragment();
-			render(html`<h2>Downloading reMarkable file!</h2><p>Your file <b>${name}</b> is syncing and will be available in your vault soon.</p>`, frag);
 			try {
 				ScrybbleLogger.info(`Downloading file ${obfuscateString(path, 60)}`)
-				await this.plugin.downloadFile(path)
+				await this.plugin.requestFileToBeSynced(path)
 			} catch (e) {
 				ScrybbleLogger.handleError("GENERAL_ERROR", e)
 			}
-			new Notice(frag);
 		} else if (type === "d") {
 			this.cwd = path;
 			await this.loadTree();

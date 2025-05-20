@@ -13,7 +13,7 @@ export function obfuscateString(str, percentage) {
 
 	// Handle edge cases
 	if (str.length === 0 || percentage === 0) return str;
-	if (percentage === 100) return '*'.repeat(str.length);
+	if (percentage === 100) return '_'.repeat(str.length);
 
 	// Convert string to array for manipulation
 	const chars = str.split('');
@@ -27,7 +27,7 @@ export function obfuscateString(str, percentage) {
 
 	// Replace characters at the first charsToReplace indices
 	for (let i = 0; i < charsToReplace; i++) {
-		chars[indices[i]] = '*';
+		chars[indices[i]] = '_';
 	}
 
 	// Join back to string and return

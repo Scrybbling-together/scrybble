@@ -1,6 +1,6 @@
 import {html, TemplateResult} from "lit-html";
 
-interface ResponseError extends Error {
+export interface ResponseError extends Error {
 	status: number;
 	message: string;
 }
@@ -28,6 +28,12 @@ function formatError(e?: Error | ResponseError): TemplateResult {
 	return html``;
 }
 const errors = {
+	"FILE_DOWNLOAD_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Unable to download the file`,
+		message: html`..`,
+		helpAction: html`...`
+	}),
+
 	"NOT_LOGGED_IN": (e?: Error | ResponseError) => ({
 		title: html`Not logged in`,
 		message: html`You are not logged in to Scrybble`,

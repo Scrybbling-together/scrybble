@@ -23,6 +23,7 @@ export class ScrybbleView extends ItemView {
 	}
 
 	async onload() {
+		await this.renderView()
 		if (!this.plugin.access_token) {
 			this.error = ScrybbleLogger.handleError("NOT_LOGGED_IN");
 			await this.renderView();

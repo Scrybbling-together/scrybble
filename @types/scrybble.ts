@@ -10,6 +10,7 @@ export interface ScrybbleSettings {
 	self_hosted: boolean;
 
 	custom_host: Host;
+	sync_state: Record<string, number>;
 }
 
 export type SyncDelta = { id: number, download_url: string, filename: string };

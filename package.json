@@ -24,6 +24,7 @@
 	"dependencies": {
 		"jszip": "^3.10.0",
 		"lit-element": "^4.2.0",
-		"lit-html": "^3.3.0"
+		"lit-html": "^3.3.0",
+		"typescript-fsm": "^1.6.0"
 	}
 }
