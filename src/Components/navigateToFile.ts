@@ -30,30 +30,25 @@ export class NavigateToFile extends LitElement {
 		menu
 			.addItem(item => item.setTitle(`Markdown file${md == null ? " - doesn't exist" : ""}`).setIcon("file-text").setDisabled(true)).addSeparator()
 			.addItem(item =>
-				item.setTitle("Open Markdown in current tab")
-					.setIcon("file-text")
-					.onClick(() => app.workspace.getLeaf().openFile(md!))
-					.setDisabled(md == null)
-			)
-			.addItem(item =>
 				item.setTitle("Open Markdown in new tab")
 					.setIcon("file-plus")
 					.onClick(() => app.workspace.getLeaf(true).openFile(md!))
 					.setDisabled(md == null)
 			)
 			.addItem(item =>
-				item.setTitle("Open Markdown in split view")
+				item.setTitle("Open Markdown in vertical split view")
 					.setIcon("separator-vertical")
 					.onClick(() => app.workspace.getLeaf("split", "vertical").openFile(md!))
 					.setDisabled(md == null)
-			).addSeparator()
-			.addItem(item => item.setTitle(`PDF file${pdf == null ? " - doesn't exist" : ""}`).setIcon("file-text").setDisabled(true)).addSeparator()
-			.addItem(item =>
-				item.setTitle("Open PDF in current tab")
-					.setIcon("file")
-					.onClick(() => app.workspace.getLeaf().openFile(pdf!))
-					.setDisabled(pdf == null)
 			)
+			.addItem(item =>
+				item.setTitle("Open Markdown in horizontal split view")
+					.setIcon("separator-horizontal")
+					.onClick(() => app.workspace.getLeaf("split", "horizontal").openFile(md!))
+					.setDisabled(md == null)
+			)
+			.addSeparator()
+			.addItem(item => item.setTitle(`PDF file${pdf == null ? " - doesn't exist" : ""}`).setIcon("file-text").setDisabled(true)).addSeparator()
 			.addItem(item =>
 				item.setTitle("Open PDF in new tab")
 					.setIcon("file-plus")
@@ -61,11 +56,17 @@ export class NavigateToFile extends LitElement {
 					.setDisabled(pdf == null)
 			)
 			.addItem(item =>
-				item.setTitle("Open PDF in split view")
+				item.setTitle("Open PDF in vertical split view")
 					.setIcon("separator-vertical")
 					.onClick(() => app.workspace.getLeaf("split", "vertical").openFile(pdf!))
 					.setDisabled(pdf == null)
-			).addSeparator().showAtMouseEvent(e);
+			)
+			.addItem(item =>
+				item.setTitle("Open PDF in horizontal split view")
+					.setIcon("separator-horizontal")
+					.onClick(() => app.workspace.getLeaf("split", "horizontal").openFile(pdf!))
+					.setDisabled(pdf == null))
+			.addSeparator().showAtMouseEvent(e);
 	}
 
 	render() {
