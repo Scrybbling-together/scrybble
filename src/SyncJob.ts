@@ -1,5 +1,5 @@
 import {StateMachine, t} from "typescript-fsm";
-import {SyncProgressNotice} from "./Components/SyncNotice";
+import {SyncProgressNotice} from "./ui/Components/SyncNotice";
 
 export enum States {
 	// initial state
@@ -36,8 +36,8 @@ export enum Events {
 }
 
 export class SyncJob extends StateMachine<States, Events> {
-	public download_url: string;
-	public sync_id: number;
+	public download_url?: string;
+	public sync_id?: number;
 
 	constructor(
 		key: number = 0,

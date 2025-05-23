@@ -1,17 +1,23 @@
 import {Events, States, SyncJob} from "./SyncJob";
 import {ResponseError} from "./errorHandling/Errors";
 import {basename, dirPath, sanitizeFilename} from "./support";
-import {App, Notice, requestUrl, TFile} from "obsidian";
+import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
 import * as jszip from "jszip";
-import Scrybble from "../main";
+import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
 
-export class SyncQueue {
+export interface ISyncQueue {
+	requestSync(filename: string): void;
+}
+
+export class SyncQueue implements ISyncQueue {
 	private syncJobs: SyncJob[] = [];
 
 	private readonly busyStates = [States.downloading, States.awaiting_processing];
 
 	constructor(
-		private plugin: Scrybble,
+		private settings: ScrybbleSettings,
+		private vault: Vault,
+		private api: ScrybbleApi,
 		private onStartDownloadFile: (job: SyncJob) => void,
 		private onFinishedDownloadFile: (job: SyncJob, success: boolean, error?: Error | ResponseError) => void,
 	) {
@@ -23,7 +29,7 @@ export class SyncQueue {
 					busy += 1;
 				}
 
-				if (busy < 3) {
+				if (busy < maxActiveJobs) {
 					if (job.getState() === States.init) {
 						await this.requestFileToBeSynced(job)
 						busy += 1
@@ -55,11 +61,9 @@ export class SyncQueue {
 	}
 
 	private async download(job: SyncJob) {
-		const vault = this.plugin.app.vault
-
 		let relativePath = dirPath(job.filename)
 		let nameOfFile = sanitizeFilename(basename(job.filename))
-		const folderPath = await this.ensureFolderExists(vault, relativePath, this.plugin.settings.sync_folder)
+		const folderPath = await this.ensureFolderExists(this.vault, relativePath, this.settings.sync_folder)
 
 		this.onStartDownloadFile(job)
 		await job.dispatch(Events.downloadRequestSent)
@@ -70,8 +74,8 @@ export class SyncQueue {
 
 		try {
 			const zip = await jszip.loadAsync(response.arrayBuffer)
-			await this.zippedFileToVault(vault, zip, /_remarks(-only)?.pdf/, `${folderPath}${nameOfFile}.pdf`)
-			await this.zippedFileToVault(vault, zip, /_obsidian.md/, `${folderPath}${nameOfFile}.md`, false)
+			await this.zippedFileToVault(this.vault, zip, /_remarks(-only)?.pdf/, `${folderPath}${nameOfFile}.pdf`)
+			await this.zippedFileToVault(this.vault, zip, /_obsidian.md/, `${folderPath}${nameOfFile}.md`, false)
 			await job.downloaded()
 			this.onFinishedDownloadFile(job, true)
 		} catch (e) {
@@ -129,7 +133,7 @@ export class SyncQueue {
 	private async requestFileToBeSynced(job: SyncJob) {
 		try {
 			await job.syncRequestSent()
-			const response = await this.plugin.fetchRequestFileToBeSynced(job.filename)
+			const response = await this.api.fetchRequestFileToBeSynced(job.filename)
 			await job.syncRequestConfirmed(response.sync_id)
 		} catch (e) {
 			// if it's a 400, assume the sync job is not posted.
@@ -139,7 +143,7 @@ export class SyncQueue {
 
 	private async checkProcessingState(job: SyncJob) {
 		await job.sentProcessingRequest()
-		const state = await this.plugin.fetchSyncState(job.sync_id)
+		const state = await this.api.fetchSyncState(job.sync_id)
 		if (state.completed) {
 			await job.readyToDownload(state.download_url, state.id)
 		} else {

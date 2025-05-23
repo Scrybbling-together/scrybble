@@ -6,25 +6,34 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"test": "cucumber-js"
 	},
 	"keywords": [],
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
-		"@types/node": "^16.11.6",
-		"@typescript-eslint/eslint-plugin": "^5.2.0",
-		"@typescript-eslint/parser": "^5.2.0",
-		"builtin-modules": "^3.2.0",
+		"@cucumber/cucumber": "^11.3.0",
+		"@types/node": "^16.18.126",
+		"@typescript-eslint/eslint-plugin": "^5.62.0",
+		"@typescript-eslint/parser": "^5.62.0",
+		"builtin-modules": "^3.3.0",
 		"esbuild": "^0.25.4",
+		"jsdom": "^26.1.0",
 		"obsidian": "latest",
-		"tslib": "^2.3.1",
-		"typescript": "^5.8.3"
+		"tslib": "^2.8.1",
+		"typescript": "^5.8.3",
+		"ts-node": "^10.9.2"
 	},
 	"dependencies": {
-		"jszip": "^3.10.0",
+		"@lit/context": "^1.1.5",
+		"@types/chai": "^5.2.2",
+		"@types/jsdom": "^21.1.7",
+		"chai": "^5.2.0",
+		"jszip": "^3.10.1",
 		"lit-element": "^4.2.0",
 		"lit-html": "^3.3.0",
+		"pino": "^9.7.0",
 		"typescript-fsm": "^1.6.0"
 	}
 }

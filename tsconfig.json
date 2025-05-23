@@ -1,23 +1,27 @@
 {
 	"compilerOptions": {
-		"baseUrl": ".",
-		"inlineSourceMap": true,
-		"inlineSources": true,
-		"module": "ES2020",
-		"target": "ES2017",
-		"allowJs": false,
-		"experimentalDecorators": true,
+		"target": "ES2020",
+		"lib": ["dom", "dom.iterable", "es6"],
+		"allowJs": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
 		"strict": true,
-		"noImplicitAny": true,
+		"forceConsistentCasingInFileNames": true,
 		"moduleResolution": "node",
-		"importHelpers": true,
+		"resolveJsonModule": true,
 		"isolatedModules": true,
-		"lib": [
-			"dom",
-			"ES2020"
-		]
+		"noEmit": true,
+		"module": "commonjs",
+		"declaration": true,
+		"outDir": "./lib",
+		"removeComments": true,
+		"experimentalDecorators": true,
+		"strictNullChecks": true
 	},
 	"include": [
-		"**/*.ts"
+		"features/**/*",
+		"src/**/*",
+		"main.ts"
 	]
 }

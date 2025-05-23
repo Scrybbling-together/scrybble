@@ -1,0 +1,18 @@
+{
+	"default": {
+		"require": [
+			"features/step_definitions/load_jsdom.ts",
+			"features/step_definitions/**/*.ts"
+		],
+		"requireModule": [
+			"ts-node/register"
+		],
+		"format": [
+			"progress-bar",
+			"json:cucumber-report.json"
+		],
+		"formatOptions": {
+			"snippetInterface": "async-await"
+		}
+	}
+}

@@ -1,34 +1,33 @@
-import {LitElement} from "lit-element";
-import {html} from "lit-html";
-import {getIcon} from "obsidian";
+import { LitElement, html, TemplateResult } from "lit-element";
+import { property } from "lit-element/decorators.js";
+import { getIcon } from "obsidian";
 
 export class RmDir extends LitElement {
-	static get properties() {
-		return {
-			name: {type: String},
-			path: {type: String}
-		}
-	}
+	@property({ type: String })
+	name!: string;
 
-	render() {
+	@property({ type: String })
+	path!: string;
+
+	render(): TemplateResult {
 		return html`
 			<div class="tree-item" @click="${this._handleClick}" aria-label="Open folder">
 				<div class="tree-item-self is-clickable">
 					<span class="tree-item-icon">${getIcon('folder')}</span> ${this.name}
 				</div>
-			</div>`
+			</div>
+		`;
 	}
 
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
-		return this
+		return this;
 	}
 
-	private _handleClick() {
+	private _handleClick(): void {
 		this.dispatchEvent(new CustomEvent('rm-click', {
-			detail: {name: this.name, path: this.path, type: 'd'},
+			detail: { name: this.name, path: this.path, type: 'd' },
 			bubbles: true,
 			composed: true
 		}));
 	}
 }
-

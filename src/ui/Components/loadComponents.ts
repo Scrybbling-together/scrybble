@@ -6,8 +6,10 @@ import {ScrybbleSyncHistoryComponent} from "./SyncHistory";
 import {NavigateToFile} from "./navigateToFile";
 import {ErrorComponent} from "./ErrorComponent";
 import {SyncProgressIndicator} from "./SyncNotice";
+import {ScrybbleUI} from "./ScrybbleUI";
 
 export default function loadLitComponents() {
+	customElements.define("scrybble-ui", ScrybbleUI)
 	customElements.define("rm-tree", RmFileTree)
 	customElements.define('rm-file', RmFile)
 	customElements.define('rm-dir', RmDir)

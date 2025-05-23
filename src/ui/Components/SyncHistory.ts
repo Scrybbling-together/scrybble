@@ -1,13 +1,17 @@
 import {html, LitElement, nothing} from 'lit-element';
 import {property, state} from 'lit-element/decorators.js';
-import Scrybble from "../../main";
-import {ErrorMessage, ScrybbleLogger} from "../errorHandling/Errors";
+import {ErrorMessage, Errors} from "../../errorHandling/Errors";
 import {getIcon} from "obsidian";
-import {SyncItem} from "../../@types/scrybble";
+import {ScrybbleCommon, SyncItem} from "../../../@types/scrybble";
+import {consume} from "@lit/context";
+import {scrybbleContext} from "../scrybbleContext";
 
 export class ScrybbleSyncHistoryComponent extends LitElement {
-	@property({type: Object})
-	plugin: Scrybble;
+	@consume({context: scrybbleContext})
+	@property({type: Object, attribute: false})
+	scrybble!: ScrybbleCommon;
+
+
 	@state()
 	private syncItems: SyncItem[] = [];
 	@state()
@@ -21,9 +25,8 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 	@state()
 	private error: ErrorMessage | null = null;
 
-	constructor(plugin: Scrybble) {
+	constructor() {
 		super();
-		this.plugin = plugin;
 	}
 
 	async connectedCallback() {
@@ -36,14 +39,14 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 			this.loading = true;
 			this.requestUpdate();
 
-			const response = await this.plugin.fetchPaginatedSyncHistory(page);
+			const response = await this.scrybble.api.fetchPaginatedSyncHistory(page);
 			this.syncItems = response.data;
 			this.currentPage = response.current_page;
 			this.lastPage = response.last_page;
 			this.total = response.total;
 			this.error = null;
 		} catch (e) {
-			this.error = ScrybbleLogger.handleError("SYNC_HISTORY_ERROR", e);
+			this.error = Errors.handle("SYNC_HISTORY_ERROR", e as Error);
 		} finally {
 			this.loading = false;
 			this.requestUpdate();
@@ -91,10 +94,12 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 			<div class="scrybble-sync-history">
 				${this.syncItems.map(item => html`
 					<div class="scrybble-sync-item">
-						<navigate-to-file-btn .plugin="${this.plugin}" .name="${item.filename}" .status="${item.completed ? "completed" : item.error ? "error" : "progress"}"></navigate-to-file-btn>
+						<navigate-to-file-btn .name="${item.filename}"
+											  .status="${item.completed ? "completed" : item.error ? "error" : "progress"}"></navigate-to-file-btn>
 						<div class="scrybble-sync-date">${item.created_at}</div>
 						<div class="scrybble-sync-filename" title="${item.filename}">${item.filename}</div>
-						<div class="scrybble-sync-status ${item.completed ? 'scrybble-sync-status-completed' : (item.error ? 'scrybble-sync-status-error' : 'scrybble-sync-status-progress')}">
+						<div
+							class="scrybble-sync-status ${item.completed ? 'scrybble-sync-status-completed' : (item.error ? 'scrybble-sync-status-error' : 'scrybble-sync-status-progress')}">
 							${item.completed ? 'Completed' : (item.error ? 'Error' : 'In progress')}
 						</div>
 					</div>
@@ -140,6 +145,7 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 			</div>
 		`;
 	}
+
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
 		return this
 	}

@@ -1,4 +1,5 @@
 import {html, TemplateResult} from "lit-html";
+import {pino} from "./logging";
 
 export interface ResponseError extends Error {
 	status: number;
@@ -8,7 +9,7 @@ export interface ResponseError extends Error {
 /**
  * @property title Say what happened
  * @property message Provide reassurance, say why it happened and give a suggestion to fix it.
- * @property helpAction Give a concrete way to reach support or report the error; give them a way out
+ * @property helpAction Give a concrete way to reach step_definitions or report the error; give them a way out
  * @property details Internal property for logging purposes, not relevant for end-users
  */
 export type ErrorMessage = {
@@ -75,17 +76,13 @@ const errors = {
 	})
 } satisfies Record<string, ErrorHandler>;
 
-export class ScrybbleLogger {
-	public static handleError(error_name: keyof typeof errors, e?: Error) {
-		console.log(`Scrybble ${error_name} occurred.`)
-		console.dir(e)
-		if ("message" in e && e.message.includes("ERR_CONNECTION_REFUSED")) {
+export class Errors {
+	public static handle(error_name: keyof typeof errors, e?: Error) {
+		pino.error(`Scrybble ${error_name} occurred.`)
+		pino.error(e)
+		if (e && "message" in e && e.message.includes("ERR_CONNECTION_REFUSED")) {
 			return errors["SERVER_CONNECTION_ERROR"](e)
 		}
 		return errors[error_name](e)
-	}
-
-	public static info(message: string) {
-		console.log(`Scrybble info: ${message}`)
 	}
 }

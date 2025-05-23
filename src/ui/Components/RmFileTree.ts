@@ -1,16 +1,17 @@
 import {LitElement} from "lit-element";
 import {html} from "lit-html";
+import {property} from "lit-element/decorators.js";
+import {RMFileTree} from "../../../@types/scrybble";
 
 export class RmFileTree extends LitElement {
+	@property({type: Object})
+	tree!: RMFileTree;
+
+	@property({type: String})
+	cwd!: string;
+
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
 		return this
-	}
-
-	static get properties() {
-		return {
-			tree: {type: Object},
-			cwd: {type: String}
-		}
 	}
 
 	render() {

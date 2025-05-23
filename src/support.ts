@@ -4,7 +4,7 @@
  * @param {number} percentage - Percentage of characters to replace (0-100)
  * @returns {string} The obfuscated string
  */
-export function obfuscateString(str, percentage) {
+export function obfuscateString(str: string, percentage: number) {
 	// Validate inputs
 	if (typeof str !== 'string') return '';
 	if (typeof percentage !== 'number' || percentage < 0 || percentage > 100) {
@@ -35,7 +35,7 @@ export function obfuscateString(str, percentage) {
 }
 
 // Fisher-Yates shuffle algorithm for randomizing indices
-function shuffleArray(array) {
+function shuffleArray(array: any[]) {
 	for (let i = array.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
 		[array[i], array[j]] = [array[j], array[i]];

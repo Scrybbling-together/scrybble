@@ -1,11 +1,11 @@
-import {ErrorMessage} from "../errorHandling/Errors";
+import {ErrorMessage} from "../../errorHandling/Errors";
 import {LitElement} from "lit-element";
 import {property} from "lit-element/decorators.js";
 import {html, nothing, TemplateResult} from "lit-html";
 
 export class ErrorComponent extends LitElement {
 	@property({type: Object})
-	private error: ErrorMessage
+	private error!: ErrorMessage
 
 	@property({type: Array})
 	public actions: TemplateResult[] = [];

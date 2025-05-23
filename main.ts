@@ -1,17 +1,26 @@
 import {Plugin, requestUrl, WorkspaceLeaf} from 'obsidian';
-import {Host, PaginatedResponse, RMFileTree, ScrybbleSettings, SyncDelta, SyncItem} from "./@types/scrybble";
+import {
+	Host,
+	PaginatedResponse,
+	RMFileTree,
+	ScrybbleApi, ScrybblePersistentStorage,
+	ScrybbleSettings,
+	SyncDelta,
+	SyncItem
+} from "./@types/scrybble";
 import {DEFAULT_SETTINGS, Settings} from "./src/settings";
 import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
-import loadLitComponents from "./src/Components/loadComponents";
+import loadLitComponents from "./src/ui/Components/loadComponents";
 import {SyncQueue} from "./src/SyncQueue";
+import {pino} from "./src/errorHandling/logging";
 
 // only needs to happen once, ever.
 loadLitComponents()
 
-export default class Scrybble extends Plugin {
+export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePersistentStorage  {
 	// @ts-ignore -- onload acts as a constructor.
 	public settings: ScrybbleSettings;
-	private syncQueue: SyncQueue;
+	public syncQueue: SyncQueue;
 
 	get access_token(): string | null {
 		return localStorage.getItem('scrybble_access_token');
@@ -22,10 +31,13 @@ export default class Scrybble extends Plugin {
 	}
 
 	async onload() {
+		pino.info("Loading Scrybble plugin")
 		this.settings = await this.loadSettings()
 
-
-		this.syncQueue = new SyncQueue(this,
+		this.syncQueue = new SyncQueue(
+			this.settings,
+			this.app.vault,
+			this,
 			function onStartDownloadFile(job) {},
 			 (job) => {
 				 this.settings.sync_state[job.filename] = job.sync_id
@@ -78,15 +90,11 @@ export default class Scrybble extends Plugin {
 			// 1. it is not in the sync state OR
 			// 2. the id remote is higher than the id locally
 			if (!(filename in settings.sync_state) || settings.sync_state[filename] < id) {
-				console.log(`downloading file ${filename} with id ${id}`)
 				await this.syncQueue.downloadProcessedFile(filename, download_url, id)
 			}
 		}
 	}
 
-	async requestFileToBeSynced(filename: string) {
-		this.syncQueue.requestSync(filename)
-	}
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -145,7 +153,7 @@ export default class Scrybble extends Plugin {
 				"accept": "application/json",
 				"Authorization": `Bearer ${this.access_token}`
 			},
-			body: JSON.stringify({ sync_id })
+			body: JSON.stringify({sync_id})
 		});
 
 		return response.json
@@ -215,6 +223,5 @@ export default class Scrybble extends Plugin {
 			};
 		}
 	}
-
 }
 

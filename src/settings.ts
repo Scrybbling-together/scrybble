@@ -1,6 +1,7 @@
 import {ScrybbleSettings} from "../@types/scrybble";
 import {App, Notice, PluginSettingTab, Setting} from "obsidian";
 import Scrybble from "../main";
+import {Errors} from "./errorHandling/Errors";
 
 export const DEFAULT_SETTINGS: ScrybbleSettings = {
 	last_successful_sync_id: -1,
@@ -53,13 +54,11 @@ export class Settings extends PluginSettingTab {
 					button.setButtonText('Log in');
 					button.onClick(async () => {
 						try {
-							const host = this.plugin.getHost();
 							const {access_token} = await this.plugin.fetchOAuthToken(username, password);
 							localStorage.setItem('scrybble_access_token', access_token);
 							this.display();
 						} catch (error) {
-							new Notice("Scrybble: Failed to log in, check your username and password")
-							console.error(error);
+							Errors.handle(error)
 						}
 					});
 				});

@@ -1,19 +1,19 @@
 // ScrybbleFileTreeComponent.ts
-import {css, html, LitElement, nothing} from 'lit-element';
+import {html, LitElement, nothing} from 'lit-element';
 import {property, state} from 'lit-element/decorators.js';
-import {getIcon, Notice} from "obsidian";
-import {render} from "lit-html";
-import Scrybble from "../../main";
-import {RMFileTree} from "../../@types/scrybble";
-import {ErrorMessage, ScrybbleLogger} from "../errorHandling/Errors";
-import {obfuscateString} from "../support";
+import {RMFileTree, ScrybbleCommon} from "../../../@types/scrybble";
+import {ErrorMessage, Errors} from "../../errorHandling/Errors";
+import {scrybbleContext} from "../scrybbleContext";
+import {consume} from "@lit/context";
+import {getIcon} from "obsidian";
 
 export class ScrybbleFileTreeComponent extends LitElement {
-	@property({type: Object})
-	plugin: Scrybble;
+	@consume({context: scrybbleContext})
+	@property({type: Object, attribute: false})
+	scrybble!: ScrybbleCommon;
 
 	@state()
-	private tree: RMFileTree;
+	private tree!: RMFileTree;
 
 	@state()
 	private cwd = "/";
@@ -23,11 +23,6 @@ export class ScrybbleFileTreeComponent extends LitElement {
 
 	@state()
 	private error: ErrorMessage | null = null;
-
-	constructor(plugin: Scrybble) {
-		super();
-		this.plugin = plugin;
-	}
 
 	async connectedCallback() {
 		super.connectedCallback();
@@ -39,13 +34,13 @@ export class ScrybbleFileTreeComponent extends LitElement {
 		this.requestUpdate();
 	}
 
-	async handleClickFileOrFolder({detail: {name, path, type}}) {
+	async handleClickFileOrFolder({detail: {path, type}}: any) {
 		if (type === "f") {
 			try {
-				ScrybbleLogger.info(`Downloading file ${obfuscateString(path, 60)}`)
-				await this.plugin.requestFileToBeSynced(path)
+				// Errors.info(`Downloading file ${obfuscateString(path, 60)}`)
+				await this.scrybble.sync.requestSync(path)
 			} catch (e) {
-				ScrybbleLogger.handleError("GENERAL_ERROR", e)
+				// Errors.handle("GENERAL_ERROR", e)
 			}
 		} else if (type === "d") {
 			this.cwd = path;
@@ -57,10 +52,10 @@ export class ScrybbleFileTreeComponent extends LitElement {
 		try {
 			this.loading = true;
 			this.requestUpdate();
-			this.tree = await this.plugin.fetchFileTree(this.cwd);
+			this.tree = await this.scrybble.api.fetchFileTree(this.cwd);
 			this.error = null;
 		} catch (e) {
-			this.error = ScrybbleLogger.handleError("TREE_LOADING_ERROR", e);
+			this.error = Errors.handle("TREE_LOADING_ERROR", e as Error);
 		} finally {
 			this.loading = false;
 			this.requestUpdate();

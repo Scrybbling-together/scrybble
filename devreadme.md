@@ -5,7 +5,7 @@
 ```shell
 npm i
 # go to your obsidian folder
-# cd ~/DocumentsLauranomicon/.obsidian
+# cd ~/Documents/Lauranomicon/.obsidian
 mkdir -p plugins
 cd plugins
 # symlink this project to the plugins folder

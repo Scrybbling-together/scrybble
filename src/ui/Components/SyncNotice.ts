@@ -1,6 +1,6 @@
 import {html, LitElement} from 'lit-element';
 import { property} from 'lit-element/decorators.js';
-import {States} from "../SyncJob";
+import {States} from "../../SyncJob";
 import {Notice} from "obsidian";
 import {render} from "lit-html";
 
@@ -101,7 +101,7 @@ export class SyncProgressIndicator extends LitElement {
 
 			case 'download':
 				if (this.state === States.downloading) return 'stage-waiting';
-				if (this.state === States.failed_to_download) return 'stage-error';
+				// if (this.state === States.failed_to_download) return 'stage-error';
 				if (this.state === States.downloaded) return 'stage-completed';
 				return '';
 		}

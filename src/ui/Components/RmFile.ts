@@ -1,14 +1,14 @@
 import {LitElement} from "lit-element";
 import {html} from "lit-html";
 import {getIcon} from "obsidian";
+import {property} from "lit-element/decorators.js";
 
 export class RmFile extends LitElement {
-	static get properties() {
-		return {
-			name: {type: String},
-			path: {type: String}
-		}
-	}
+	@property({ type: String })
+	name!: string;
+
+	@property({ type: String })
+	path!: string;
 
 	render() {
 		return html`
