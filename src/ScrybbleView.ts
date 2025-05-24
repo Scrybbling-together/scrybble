@@ -1,7 +1,7 @@
 import {ItemView, WorkspaceLeaf} from "obsidian";
 import Scrybble from "../main";
 import {html, render} from "lit-html";
-import {, ScrybbleViewType} from "./ui/Components/ScrybbleUI";
+import {ScrybbleViewType} from "./ui/Components/ScrybbleUI";
 import {ObsidianFileNavigator} from "./FileNavigator";
 
 export const SCRYBBLE_VIEW = "SCRYBBLE_VIEW";

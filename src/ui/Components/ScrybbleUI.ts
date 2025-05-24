@@ -7,12 +7,12 @@ import {scrybbleContext} from "../scrybbleContext";
 import {provide} from "@lit/context";
 import {LitElement} from "lit-element";
 import {property, state} from "lit-element/decorators.js";
+
 export enum ScrybbleViewType {
 	FILE_TREE = "file_tree",
 	SYNC_HISTORY = "sync_history",
 	SUPPORT = "support"
 }
-
 
 export class ScrybbleUI extends LitElement {
 	@state()
@@ -34,13 +34,7 @@ export class ScrybbleUI extends LitElement {
 	@property({type: Function, attribute: false})
 	onErrorRefresh!: () => Promise<void>;
 
-	constructor() {
-		console.log("constructing")
-		super();
-	}
-
 	private async initialize() {
-		console.log("Initializing!!!")
 		this.isLoading = true;
 
 		if (!this.scrybble.storage.access_token) {
@@ -91,7 +85,6 @@ export class ScrybbleUI extends LitElement {
                 <button class="retry" @click="${() => this.handleErrorRefresh()}">Refresh</button>`]}"/>` : nothing;
 
 		const loadingTemplate = isLoading ? html`<div>Loading...</div>` : nothing;
-		console.log("rendering! Wow", error, errorTemplate)
 
 		return html`
             <div style="display: flex; flex-direction: column; height: 100%;">
@@ -161,5 +154,4 @@ export class ScrybbleUI extends LitElement {
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
 		return this
 	}
-
 }

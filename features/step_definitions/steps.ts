@@ -1,111 +1,48 @@
-import {LitElement} from "lit-element";
-
-const mockObsidian = {
-	getIcon: (name: string) => `[${name}]`
-};
-
-// Mock the module
-const Module = require('module');
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function (...args: any) {
-	if (args[0] === 'obsidian') {
-		return mockObsidian;
-	}
-	return originalRequire.apply(this, args);
-};
-
-import {Given, Then, When} from "@cucumber/cucumber";
+import "../support/MockObsidian"
+import {MockFileNavigator} from "../support/MockFileNavigator";
+import {Given, IWorldOptions, setWorldConstructor, Then, When, World} from "@cucumber/cucumber";
 import {html, render} from "lit-html";
 import {expect} from "chai";
-import {
-	ContextMenuItem,
-	FileNavigator,
-	PaginatedResponse,
-	RMFileTree,
-	ScrybbleApi,
-	ScrybbleCommon,
-	SyncDelta,
-	SyncItem
-} from "../../@types/scrybble";
+import {ScrybbleApi, ScrybbleCommon, ScrybblePersistentStorage} from "../../@types/scrybble";
 import loadLitComponents from "../../src/ui/Components/loadComponents";
-import {ScrybbleUI} from "../../src/ui/Components/ScrybbleUI";
-export class MockFileNavigator implements FileNavigator {
-	public openedFiles: Array<{ path: string, method: string }> = [];
-	public lastContextMenu: ContextMenuItem[] | null = null;
-	private files: Map<string, any> = new Map();
+import {api, MockScrybbleApi} from "../support/MockScrybbleApi";
 
-	// Test helper to set up mock files
-	setMockFile(path: string, file: any): void {
-		this.files.set(path, file);
+loadLitComponents();
+
+class ObsidianWorld extends World {
+	public container: HTMLDivElement | null;
+	public storage: ScrybblePersistentStorage;
+	public api: MockScrybbleApi;
+
+	constructor(options: IWorldOptions) {
+		super(options);
+		this.container = null;
+		this.storage = {
+			access_token: null
+		};
+		this.api = new MockScrybbleApi();
 	}
 
-	async openInNewTab(filePath: string): Promise<void> {
-		this.openedFiles.push({path: filePath, method: 'newTab'});
-	}
-
-	async openInVerticalSplit(filePath: string): Promise<void> {
-		this.openedFiles.push({path: filePath, method: 'verticalSplit'});
-	}
-
-	async openInHorizontalSplit(filePath: string): Promise<void> {
-		this.openedFiles.push({path: filePath, method: 'horizontalSplit'});
-	}
-
-	getFileByPath(path: string): any | null {
-		return this.files.get(path) || null;
-	}
-
-	showContextMenu(event: MouseEvent, items: ContextMenuItem[]): void {
-		this.lastContextMenu = items;
-		// In tests, you could trigger the onClick handlers manually
-	}
+	[key: string]: any;
 }
 
-const api: ScrybbleApi = {
-	async fetchFileTree(path: string): Promise<RMFileTree> {
-		const tree: RMFileTree = {
-			items: [],
-			cwd: "/"
-		}
-		return Promise.resolve(tree);
-	},
-	fetchOAuthToken(username: string, password: string): Promise<{ access_token: string }> {
-		return Promise.resolve({access_token: ""});
-	},
-	fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready"> {
-		return Promise.resolve("unauthenticated");
-	},
-	fetchPaginatedSyncHistory(page: number): Promise<PaginatedResponse<SyncItem>> {
-		const t: PaginatedResponse<SyncItem> = {
-			data: [],
-			current_page: 0,
-			last_page: 0,
-			per_page: 0,
-			total: 0
-		}
-		return Promise.resolve(t);
-	},
-	fetchRequestFileToBeSynced(filePath: string): Promise<{ sync_id: number; filename: string }> {
-		return Promise.resolve({filename: "", sync_id: 0});
-	},
-	fetchSyncDelta(): Promise<ReadonlyArray<SyncDelta>> {
-		return Promise.resolve([]);
-	},
-	fetchSyncState(sync_id: number): Promise<any> {
-		return Promise.resolve(undefined);
-	}
-}
+setWorldConstructor(ObsidianWorld);
 
-Given(/^The user is not logged in$/, function () {
+Given(/^The user is not logged in$/, function (this: ObsidianWorld) {
 	this.storage = {
 		access_token: null
 	}
 });
 
-When(/^I open the Scrybble interface$/, async function () {
-	loadLitComponents();
+Given(/^The user is logged in$/, function (this: ObsidianWorld) {
+	this.storage = {
+		access_token: "aslkdjfa"
+	}
+});
+
+When(/^The user opens the Scrybble interface$/, async function (this: ObsidianWorld) {
 	const scrybble: ScrybbleCommon = {
-		api,
+		api: this.api,
 		storage: this.storage,
 		sync: {
 			requestSync(filename: string) {
@@ -125,7 +62,7 @@ When(/^I open the Scrybble interface$/, async function () {
 	};
 
 	this.container = document.createElement('div');
-	document.body.appendChild(this.container);
+	document.body.appendChild(this.container as Node);
 
 	render(html`<scrybble-ui
 		.scrybble="${scrybble}"
@@ -134,7 +71,23 @@ When(/^I open the Scrybble interface$/, async function () {
 	></scrybble-ui>`, this.container)
 });
 
+When("The user clicks on the {string} button", function (this: ObsidianWorld, text) {
+	const elements = Array.from((this.container as HTMLDivElement).querySelectorAll(`button`));
+	const element = elements.find(el => el.innerText.includes(text));
+
+	expect(element).to.not.be.null;
+
+	if (element) {
+		(element as HTMLButtonElement).click();
+	}
+});
+
 Then("The interface should tell me {string}", function (text) {
-	console.log("The container contains the following text", this.container.textContent)
-	expect(this.container.innerText).to.include(text);
+	expect(this.container.innerText, this.container.innerText).to.include(text);
+});
+Then("The server responds to the {string} request with a {int} status code", function (this: ObsidianWorld, text, statusCode) {
+	this.api.requestWillFailWithStatusCode(text, statusCode);
+});
+When("The server responds to the {string} as usual", function (this: ObsidianWorld, text) {
+	this.api.requestGoesAsNormal(text);
 });
