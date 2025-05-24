@@ -13,11 +13,6 @@ export enum ScrybbleViewType {
 	SUPPORT = "support"
 }
 
-export interface ScrybbleUIProps  {
-	scrybble: ScrybbleCommon;
-	onViewSwitch: (view: ScrybbleViewType) => void;
-	onErrorRefresh: () => Promise<void>;
-}
 
 export class ScrybbleUI extends LitElement {
 	@state()
@@ -39,7 +34,13 @@ export class ScrybbleUI extends LitElement {
 	@property({type: Function, attribute: false})
 	onErrorRefresh!: () => Promise<void>;
 
+	constructor() {
+		console.log("constructing")
+		super();
+	}
+
 	private async initialize() {
+		console.log("Initializing!!!")
 		this.isLoading = true;
 
 		if (!this.scrybble.storage.access_token) {

@@ -9,14 +9,13 @@ import {SyncProgressIndicator} from "./SyncNotice";
 import {ScrybbleUI} from "./ScrybbleUI";
 
 export default function loadLitComponents() {
-	customElements.define("scrybble-ui", ScrybbleUI)
-	customElements.define("rm-tree", RmFileTree)
-	customElements.define('rm-file', RmFile)
-	customElements.define('rm-dir', RmDir)
-	customElements.define('scrybble-file-tree', ScrybbleFileTreeComponent)
-	customElements.define('scrybble-sync-history', ScrybbleSyncHistoryComponent)
-	customElements.define('navigate-to-file-btn', NavigateToFile)
-	customElements.define('error-view', ErrorComponent)
-	customElements.define('sync-progress-indicator', SyncProgressIndicator)
-
+	window.customElements.define("scrybble-ui", ScrybbleUI)
+	window.customElements.define("rm-tree", RmFileTree)
+	window.customElements.define('rm-file', RmFile)
+	window.customElements.define('rm-dir', RmDir)
+	window.customElements.define('scrybble-file-tree', ScrybbleFileTreeComponent)
+	window.customElements.define('scrybble-sync-history', ScrybbleSyncHistoryComponent)
+	window.customElements.define('navigate-to-file-btn', NavigateToFile)
+	window.customElements.define('error-view', ErrorComponent)
+	window.customElements.define('sync-progress-indicator', SyncProgressIndicator)
 }

@@ -14,16 +14,18 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@cucumber/cucumber": "^11.3.0",
+		"@happy-dom/global-registrator": "^17.4.7",
 		"@types/node": "^16.18.126",
 		"@typescript-eslint/eslint-plugin": "^5.62.0",
 		"@typescript-eslint/parser": "^5.62.0",
 		"builtin-modules": "^3.3.0",
 		"esbuild": "^0.25.4",
+		"happy-dom": "^17.4.7",
 		"jsdom": "^26.1.0",
 		"obsidian": "latest",
+		"ts-node": "^10.9.2",
 		"tslib": "^2.8.1",
-		"typescript": "^5.8.3",
-		"ts-node": "^10.9.2"
+		"typescript": "^5.8.3"
 	},
 	"dependencies": {
 		"@lit/context": "^1.1.5",

@@ -1,3 +1,5 @@
+import {LitElement} from "lit-element";
+
 const mockObsidian = {
 	getIcon: (name: string) => `[${name}]`
 };
@@ -5,7 +7,7 @@ const mockObsidian = {
 // Mock the module
 const Module = require('module');
 const originalRequire = Module.prototype.require;
-Module.prototype.require = function(...args: any) {
+Module.prototype.require = function (...args: any) {
 	if (args[0] === 'obsidian') {
 		return mockObsidian;
 	}
@@ -13,8 +15,7 @@ Module.prototype.require = function(...args: any) {
 };
 
 import {Given, Then, When} from "@cucumber/cucumber";
-import {ScrybbleUI, ScrybbleUIProps, ScrybbleViewType} from "../../src/ui/Components/ScrybbleUI";
-import {render} from "lit-html";
+import {html, render} from "lit-html";
 import {expect} from "chai";
 import {
 	ContextMenuItem,
@@ -22,15 +23,16 @@ import {
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
+	ScrybbleCommon,
 	SyncDelta,
 	SyncItem
 } from "../../@types/scrybble";
 import loadLitComponents from "../../src/ui/Components/loadComponents";
-
+import {ScrybbleUI} from "../../src/ui/Components/ScrybbleUI";
 export class MockFileNavigator implements FileNavigator {
-	private files: Map<string, any> = new Map();
-	public openedFiles: Array<{path: string, method: string}> = [];
+	public openedFiles: Array<{ path: string, method: string }> = [];
 	public lastContextMenu: ContextMenuItem[] | null = null;
+	private files: Map<string, any> = new Map();
 
 	// Test helper to set up mock files
 	setMockFile(path: string, file: any): void {
@@ -102,39 +104,37 @@ Given(/^The user is not logged in$/, function () {
 
 When(/^I open the Scrybble interface$/, async function () {
 	loadLitComponents();
-	const mockProps: ScrybbleUIProps = {
-		scrybble: {
-			api,
-			storage: this.storage,
-			sync: {
-				requestSync(filename: string) {
-				}
-			},
-			settings: {
-				sync_folder: "scrybble",
-				sync_state: {},
-				last_successful_sync_id: 0,
-				custom_host: {
-					client_secret: "",
-					endpoint: ""
-				},
-				self_hosted: false
-			},
-			fileNavigator: new MockFileNavigator()
+	const scrybble: ScrybbleCommon = {
+		api,
+		storage: this.storage,
+		sync: {
+			requestSync(filename: string) {
+			}
 		},
-		onViewSwitch: (view: ScrybbleViewType) => {},
-		onErrorRefresh: async () => {}
+		settings: {
+			sync_folder: "scrybble",
+			sync_state: {},
+			last_successful_sync_id: 0,
+			custom_host: {
+				client_secret: "",
+				endpoint: ""
+			},
+			self_hosted: false
+		},
+		fileNavigator: new MockFileNavigator()
 	};
-
-	const ui = new ScrybbleUI(mockProps);
-	await ui.initialize();
 
 	this.container = document.createElement('div');
 	document.body.appendChild(this.container);
-	render(ui.render(), this.container);
+
+	render(html`<scrybble-ui
+		.scrybble="${scrybble}"
+		.onViewSwitch="${() => {}}"
+		.onErrorRefresh="${() => {}}"
+	></scrybble-ui>`, this.container)
 });
 
 Then("The interface should tell me {string}", function (text) {
-	console.log(this.container.textContent)
+	console.log("The container contains the following text", this.container.textContent)
 	expect(this.container.innerText).to.include(text);
 });
