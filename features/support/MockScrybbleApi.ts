@@ -1,4 +1,5 @@
-import {PaginatedResponse, RMFileTree, ScrybbleApi, SyncDelta, SyncItem} from "../../@types/scrybble";
+import {PaginatedResponse, RMFileTree, ScrybbleApi, ScrybbleUser, SyncDelta, SyncItem} from "../../@types/scrybble";
+import {t} from "typescript-fsm";
 
 export class MockScrybbleApi implements ScrybbleApi {
 	private errors: Record<string, number> = {};
@@ -73,6 +74,33 @@ export class MockScrybbleApi implements ScrybbleApi {
 	fetchSyncState(sync_id: number): Promise<any> {
 		this.throwIfErrorIsConfigured("fetchSyncState");
 		return Promise.resolve(undefined);
+	}
+
+	fetchGetUser(): Promise<ScrybbleUser> {
+		return Promise.resolve({
+			user: {
+				name: "Test user",
+				email: "test@scrybble.local",
+				id: 1,
+				created_at: "2025-05-05"
+			},
+			subscription_status: {
+				exists: true,
+				licenseInformation: {
+					subscription_id: "8yFSEPV-yKKLQwC2jJQ68w==",
+					active: true,
+					order_number: "abc",
+					sale_id: "def",
+					uses: 0
+				},
+				lifetime: true,
+				license: "liceeeense"
+			},
+			total_syncs: 0
+		});
+	}
+
+	fetchInitiateOAuthPKCE(): void {
 	}
 
 }

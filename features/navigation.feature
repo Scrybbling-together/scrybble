@@ -19,7 +19,7 @@ Feature: UI Navigation
 	Scenario: Logging in
 		Given The user is not logged in
 		When The user opens the Scrybble interface
-		Then The interface should tell me "Not logged in"
+		Then The interface should tell me "Connect to Scrybble"
 
 	Scenario: Opening Scrybble
 		Given The user is logged in

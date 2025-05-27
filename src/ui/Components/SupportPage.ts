@@ -28,10 +28,9 @@ export class SupportPage extends LitElement {
 						href="https://discord.gg/zPrAUzNuSN" target="_blank">Join our community</a> - other users can help too!</p>
 				</div>
 
-				<!-- Bug Report Template -->
 				<div class="section">
 					<h4>Bug Report Template</h4>
-					<p>Copy this template when emailing us:</p>
+					<p>Copy this template when sending a bug report:</p>
 					<textarea
 						class="template-textarea"
 						readonly
@@ -45,13 +44,17 @@ export class SupportPage extends LitElement {
 					</button>
 				</div>
 
-				<!-- View Logs Section -->
 				<div class="section">
 					<h4>View Error Logs</h4>
 					<p>Before reporting issues, check what's happening:</p>
-					<button class="button" @click=${this.showLogs}>
-						Show Logs
-					</button>
+					<div class="button-group">
+						<button class="button" @click=${this.showLogs}>
+							Show Logs
+						</button>
+						<button class="button button-secondary download-logs" @click=${this.downloadLogs}>
+							${getIcon("download")} Download Logs
+						</button>
+					</div>
 					<div class="logs-container" id="logs-container"></div>
 				</div>
 			</div>
@@ -73,25 +76,64 @@ export class SupportPage extends LitElement {
 
 	private copyTemplate() {
 		const template = this.getBugReportTemplate();
-		navigator.clipboard.writeText(template).then(() => {
-			// Quick feedback
-			const button = this.querySelector('.copy-button') as HTMLButtonElement;
-			if (button) {
-				const originalText = button.textContent;
-				button.textContent = 'Copied!';
-				button.classList.add('copy-success');
-				setTimeout(() => {
-					button.textContent = originalText;
-					button.classList.remove('copy-success');
-				}, 2000);
+		navigator.clipboard.writeText(template).then(() => this.showTemporaryMessage("Copied!", ".copy-button"));
+	}
+
+	private downloadLogs() {
+		try {
+			const logs = retrieveScrybbleLogs();
+			if (!logs) {
+				// Show user feedback
+				this.showTemporaryMessage('No logs available to download', ".download-logs");
+				return;
 			}
-		});
+
+			// Create formatted log content
+			const logContent = JSON.stringify(logs, null, 2);
+			const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+			const filename = `scrybble-logs-${timestamp}.json`;
+
+			// Create and trigger download
+			const blob = new Blob([logContent], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = filename;
+			a.style.display = 'none';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+
+			// Show success feedback
+			this.showTemporaryMessage('Logs downloaded successfully', ".download-logs");
+		} catch (error) {
+			console.error('Error downloading logs:', error);
+			this.showTemporaryMessage('Error downloading logs', ".download-logs");
+		}
+	}
+
+	private showTemporaryMessage(message: string, btnClass: string) {
+		const button = this.querySelector(btnClass) as HTMLButtonElement;
+		if (button) {
+			const originalText = button.innerHTML;
+			button.innerHTML = message;
+			button.disabled = true;
+			setTimeout(() => {
+				button.innerHTML = originalText;
+				button.disabled = false;
+			}, 2000);
+		}
+	}
+
+	private getEnvironment(): string {
+		return `- Obsidian version: ${this.scrybble.meta.obsidianVersion}
+- Scrybble version: ${this.scrybble.meta.scrybbleVersion}
+- Platform: ${this.scrybble.meta.platformInfo}`;
 	}
 
 	private getBugReportTemplate(): string {
-		return `Subject: Scrybble issue
-
-**What happened:**
+		return `**What happened:**
 [Describe the issue]
 
 **Steps to reproduce:**
@@ -103,12 +145,10 @@ export class SupportPage extends LitElement {
 [What should have happened]
 
 **Environment:**
-- Obsidian version: ${this.scrybble.meta.obsidianVersion}
-- Scrybble version: ${this.scrybble.meta.scrybbleVersion}
-- Platform: ${this.scrybble.meta.platformInfo}
+${this.getEnvironment()}
 
 **Error logs:**
-[Attach the error logs above to the e-mail if possible]
+[Attach the downloaded error logs to the e-mail if possible]
 
 **Additional context:**
 [Any other relevant information]`;

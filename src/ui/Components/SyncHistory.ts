@@ -11,7 +11,6 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 	@property({type: Object, attribute: false})
 	scrybble!: ScrybbleCommon;
 
-
 	@state()
 	private syncItems: SyncItem[] = [];
 	@state()

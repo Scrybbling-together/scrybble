@@ -4,7 +4,7 @@ import {
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi, ScrybblePersistentStorage,
-	ScrybbleSettings,
+	ScrybbleSettings, ScrybbleUser,
 	SyncDelta,
 	SyncItem
 } from "./@types/scrybble";
@@ -13,6 +13,7 @@ import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
 import loadLitComponents from "./src/ui/Components/loadComponents";
 import {SyncQueue} from "./src/SyncQueue";
 import {pino} from "./src/errorHandling/logging";
+import {PKCEUtils} from "./src/oauth";
 
 // only needs to happen once, ever.
 loadLitComponents()
@@ -21,6 +22,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	// @ts-ignore -- onload acts as a constructor.
 	public settings: ScrybbleSettings;
 	public syncQueue: SyncQueue;
+	private onOAuthCompleted: () => void;
 
 	get access_token(): string | null {
 		return localStorage.getItem('scrybble_access_token');
@@ -30,9 +32,20 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 		return this.getHost().endpoint;
 	}
 
+	setOnOAuthCompletedCallback(callback: () => void) {
+		this.onOAuthCompleted = callback;
+	}
+
 	async onload() {
 		pino.info("Loading Scrybble plugin")
 		this.settings = await this.loadSettings()
+
+		this.registerObsidianProtocolHandler(`scrybble-oauth`, async (data) => {
+			const {code, state} = data
+			const {refresh_token, access_token} = await this.exchangeCodeForTokens(code, state);
+			localStorage.setItem('scrybble_access_token', access_token);
+			localStorage.setItem('scrybble_refresh_token', refresh_token);
+		})
 
 		this.syncQueue = new SyncQueue(
 			this.settings,
@@ -212,6 +225,95 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 		return response.json
 	}
 
+	async fetchGetUser(): Promise<ScrybbleUser> {
+		const response = await requestUrl({
+			method: "GET",
+			url: `${this.base_url}/api/sync/user`,
+			headers: {
+				"accept": "application/json",
+				"Authorization": `Bearer ${this.access_token}`
+			}
+		});
+
+		return response.json;
+	}
+	public async exchangeCodeForTokens(code: string, state: string): Promise<{access_token: string, refresh_token: string}> {
+		// Verify state parameter
+		const storedState = localStorage.getItem('scrybble_oauth_state');
+		if (!storedState || storedState !== state) {
+			throw new Error('Invalid state parameter');
+		}
+
+		// Get stored code verifier
+		const codeVerifier = localStorage.getItem('scrybble_code_verifier');
+		if (!codeVerifier) {
+			throw new Error('Missing code verifier');
+		}
+
+		try {
+			// Exchange authorization code for tokens
+			const response = await requestUrl({
+				url: `${this.base_url}/oauth/token`,
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({
+					grant_type: 'authorization_code',
+					client_id: 2,
+					code: code,
+					redirect_uri: 'obsidian://scrybble-oauth',
+					code_verifier: codeVerifier
+				})
+			});
+
+			if (response.status !== 200) {
+				throw new Error(`Token exchange failed: ${response.status}`);
+			}
+
+			const tokenData = response.json;
+
+			// Clean up stored PKCE parameters
+			localStorage.removeItem('scrybble_code_verifier');
+			localStorage.removeItem('scrybble_oauth_state');
+
+			return {
+				access_token: tokenData.access_token,
+				refresh_token: tokenData.refresh_token
+			};
+
+		} catch (error) {
+			// Clean up on error
+			localStorage.removeItem('scrybble_code_verifier');
+			localStorage.removeItem('scrybble_oauth_state');
+			throw error;
+		}
+	}
+
+	async fetchInitiateOAuthPKCE() {
+		const codeVerifier = PKCEUtils.generateCodeVerifier();
+		const codeChallenge = await PKCEUtils.generateCodeChallenge(codeVerifier);
+		const state = PKCEUtils.generateState();
+
+		const params = new URLSearchParams({
+			client_id: 2,
+			redirect_uri: "obsidian://scrybble-oauth",
+			response_type: 'code',
+			scope: '',
+			state,
+			code_challenge: codeChallenge,
+			code_challenge_method: 'S256'
+		});
+
+		localStorage.setItem('scrybble_code_verifier', codeVerifier);
+		localStorage.setItem('scrybble_oauth_state', state);
+
+		const authUrl = `${this.base_url}/oauth/authorize?${params.toString()}`;
+
+		// Open the authorization URL in the default browser
+		window.open(authUrl, '_blank');
+	}
 
 	getHost(): Host {
 		if (this.settings.self_hosted) {
@@ -223,5 +325,6 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 			};
 		}
 	}
+
 }
 

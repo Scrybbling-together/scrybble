@@ -63,7 +63,9 @@ When(/^The user opens the Scrybble interface$/, async function (this: ObsidianWo
 			scrybbleVersion: "dev",
 			obsidianVersion: "unknown",
 			platformInfo: "development"
-		}
+		},
+		setOnOAuthCompletedCallback: (callback: () => void) => {},
+		user: null
 	};
 
 	this.container = document.createElement('div');

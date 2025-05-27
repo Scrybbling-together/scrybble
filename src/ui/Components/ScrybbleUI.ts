@@ -10,7 +10,8 @@ import {property, state} from "lit-element/decorators.js";
 export enum ScrybbleViewType {
 	FILE_TREE = "file_tree",
 	SYNC_HISTORY = "sync_history",
-	SUPPORT = "support"
+	SUPPORT = "support",
+	ACCOUNT = "login"
 }
 
 export class ScrybbleUI extends LitElement {
@@ -37,7 +38,7 @@ export class ScrybbleUI extends LitElement {
 		this.isLoading = true;
 
 		if (!this.scrybble.storage.access_token) {
-			this.error = Errors.handle("NOT_LOGGED_IN");
+			this.currentView = ScrybbleViewType.ACCOUNT
 			this.isLoading = false;
 			return;
 		}
@@ -122,6 +123,13 @@ export class ScrybbleUI extends LitElement {
                         <span>${getIcon("badge-help")}</span>
                         <span>Support</span>
                     </button>
+					<button style="display: flex; flex-direction: column"
+							class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.ACCOUNT ? 'is-active' : ''}"
+							aria-label="Account"
+							@click="${() => this.switchView(ScrybbleViewType.ACCOUNT)}">
+						<span>${getIcon("user")}</span>
+						<span>Account</span>
+					</button>
                 </div>
             </div>
         `;
@@ -137,6 +145,8 @@ export class ScrybbleUI extends LitElement {
 				return html`<scrybble-sync-history/>`;
 			case ScrybbleViewType.SUPPORT:
 				return html`<scrybble-support/>`;
+			case ScrybbleViewType.ACCOUNT:
+				return html`<scrybble-account/>`
 			default:
 				return nothing;
 		}

@@ -1,6 +1,4 @@
 import {ISyncQueue} from "../src/SyncQueue";
-import {PluginManifest} from "obsidian";
-import {Platform} from "esbuild";
 
 export interface Host {
 	endpoint: string;
@@ -67,6 +65,10 @@ export interface ScrybbleApi {
 	fetchOAuthToken(username: string, password: string): Promise<{
 		access_token: string
 	}>;
+
+	fetchGetUser(): Promise<ScrybbleUser>;
+
+	fetchInitiateOAuthPKCE(): void;
 }
 
 export interface ScrybblePersistentStorage {
@@ -98,9 +100,40 @@ export type ScrybbleCommon = {
 	sync: ISyncQueue;
 	settings: ScrybbleSettings;
 	fileNavigator: FileNavigator;
+	user: "loading" | ScrybbleUser | null;
 	meta: {
 		scrybbleVersion: string;
 		obsidianVersion: string;
 		platformInfo: string;
 	};
+	setOnOAuthCompletedCallback: (callback: () => void) => void;
+}
+
+export interface LicenseInformation {
+	uses: number;
+	order_number: string;
+	sale_id: string;
+	subscription_id: string;
+	active: boolean;
+}
+
+export interface GumroadLicenseResponse {
+	license: string;
+	exists: boolean;
+	lifetime: boolean;
+
+	// only present when 'exists' is true
+	licenseInformation?: LicenseInformation;
+}
+
+
+export type ScrybbleUser = {
+	user: {
+		created_at: string;
+		email: string;
+		name: string;
+		id: number;
+	},
+	subscription_status: GumroadLicenseResponse;
+	total_syncs: number;
 }
