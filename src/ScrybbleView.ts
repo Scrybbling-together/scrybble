@@ -48,21 +48,23 @@ export class ScrybbleView extends ItemView {
 
 	private async renderView(): Promise<void> {
 		const scrybble: ScrybbleCommon = {
-				api: this.plugin,
-				storage: this.plugin,
-				sync: this.plugin.syncQueue,
-				settings: this.plugin.settings,
-				fileNavigator: new ObsidianFileNavigator(this.plugin.app),
-				meta: {
-					scrybbleVersion: this.plugin.manifest.version,
-					obsidianVersion: apiVersion,
-					platformInfo: this.getPlatformInfo()
-				}
+			api: this.plugin,
+			storage: this.plugin,
+			sync: this.plugin.syncQueue,
+			settings: this.plugin.settings,
+			fileNavigator: new ObsidianFileNavigator(this.plugin.app),
+			user: null,
+			setOnOAuthCompletedCallback: this.plugin.setOnOAuthCompletedCallback.bind(this.plugin),
+			meta: {
+				scrybbleVersion: this.plugin.manifest.version,
+				obsidianVersion: apiVersion,
+				platformInfo: this.getPlatformInfo()
+			}
 		}
 		render(html`
 			<scrybble-ui .scrybble="${scrybble}"
 						 .onViewSwitch="${this.handleViewSwitch.bind(this)}"
-						 .onErrorRefresh="${this.handleErrorRefresh.bind(this)}"	
+						 .onErrorRefresh="${this.handleErrorRefresh.bind(this)}"
 			></scrybble-ui>`, this.contentEl);
 	}
 

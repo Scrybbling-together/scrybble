@@ -14,6 +14,7 @@ import loadLitComponents from "./src/ui/Components/loadComponents";
 import {SyncQueue} from "./src/SyncQueue";
 import {pino} from "./src/errorHandling/logging";
 import {PKCEUtils} from "./src/oauth";
+import {call} from "jszip";
 
 // only needs to happen once, ever.
 loadLitComponents()
@@ -22,7 +23,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	// @ts-ignore -- onload acts as a constructor.
 	public settings: ScrybbleSettings;
 	public syncQueue: SyncQueue;
-	private onOAuthCompleted: () => void;
+	private onOAuthCompleted: () => Promise<void>;
 
 	get access_token(): string | null {
 		return localStorage.getItem('scrybble_access_token');
@@ -32,7 +33,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 		return this.getHost().endpoint;
 	}
 
-	setOnOAuthCompletedCallback(callback: () => void) {
+	setOnOAuthCompletedCallback(callback: () => Promise<void>) {
 		this.onOAuthCompleted = callback;
 	}
 
@@ -45,6 +46,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 			const {refresh_token, access_token} = await this.exchangeCodeForTokens(code, state);
 			localStorage.setItem('scrybble_access_token', access_token);
 			localStorage.setItem('scrybble_refresh_token', refresh_token);
+			await this.onOAuthCompleted();
 		})
 
 		this.syncQueue = new SyncQueue(

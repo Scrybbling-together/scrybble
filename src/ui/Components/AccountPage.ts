@@ -28,6 +28,7 @@ export class AccountPage extends LitElement {
 
 	async connectedCallback() {
 		super.connectedCallback();
+		this.scrybble.setOnOAuthCompletedCallback(this.onOAuthCompleted.bind(this));
 		await this.checkAuthenticationStatus();
 	}
 
@@ -70,7 +71,6 @@ export class AccountPage extends LitElement {
 			this.loginError = null;
 
 			this.scrybble.api.fetchInitiateOAuthPKCE();
-			this.scrybble.setOnOAuthCompletedCallback(this.onOAuthCompleted.bind(this));
 		} catch (error) {
 			console.error('OAuth flow error:', error);
 			this.loginError = 'Failed to start login process. Please try again.';
