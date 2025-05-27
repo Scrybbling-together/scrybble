@@ -2,9 +2,18 @@ import {PaginatedResponse, RMFileTree, ScrybbleApi, SyncDelta, SyncItem} from ".
 
 export class MockScrybbleApi implements ScrybbleApi {
 	private errors: Record<string, number> = {};
+	private serverReachable: boolean = true;
 
 	public requestWillFailWithStatusCode(requestName: string, statusCode: number) {
 		this.errors[requestName] = statusCode;
+	}
+
+	public serverIsUnreachable() {
+		this.serverReachable = false;
+	}
+
+	serverIsReachable() {
+		this.serverReachable = true;
 	}
 
 	public requestGoesAsNormal(requestName: string) {
@@ -12,6 +21,9 @@ export class MockScrybbleApi implements ScrybbleApi {
 	}
 
 	private throwIfErrorIsConfigured(requestName: string) {
+		if (!this.serverReachable) {
+			throw new Error("ERR_CONNECTION_REFUSED");
+		}
 		if (requestName in this.errors) {
 			throw new Error(`Request failed, status ${this.errors[requestName]}`);
 		}
@@ -62,6 +74,7 @@ export class MockScrybbleApi implements ScrybbleApi {
 		this.throwIfErrorIsConfigured("fetchSyncState");
 		return Promise.resolve(undefined);
 	}
+
 }
 
 export const api = new MockScrybbleApi();

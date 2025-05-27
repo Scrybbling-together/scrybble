@@ -1,8 +1,9 @@
-import {ItemView, WorkspaceLeaf} from "obsidian";
+import {apiVersion, ItemView, Platform, WorkspaceLeaf} from "obsidian";
 import Scrybble from "../main";
 import {html, render} from "lit-html";
 import {ScrybbleViewType} from "./ui/Components/ScrybbleUI";
 import {ObsidianFileNavigator} from "./FileNavigator";
+import {ScrybbleCommon} from "../@types/scrybble";
 
 export const SCRYBBLE_VIEW = "SCRYBBLE_VIEW";
 
@@ -46,17 +47,42 @@ export class ScrybbleView extends ItemView {
 	}
 
 	private async renderView(): Promise<void> {
-		const scrybble = {
+		const scrybble: ScrybbleCommon = {
 				api: this.plugin,
 				storage: this.plugin,
 				sync: this.plugin.syncQueue,
 				settings: this.plugin.settings,
-				fileNavigator: new ObsidianFileNavigator(this.plugin.app)
+				fileNavigator: new ObsidianFileNavigator(this.plugin.app),
+				meta: {
+					scrybbleVersion: this.plugin.manifest.version,
+					obsidianVersion: apiVersion,
+					platformInfo: this.getPlatformInfo()
+				}
 		}
 		render(html`
 			<scrybble-ui .scrybble="${scrybble}"
 						 .onViewSwitch="${this.handleViewSwitch.bind(this)}"
 						 .onErrorRefresh="${this.handleErrorRefresh.bind(this)}"	
 			></scrybble-ui>`, this.contentEl);
+	}
+
+	private getPlatformInfo(): string {
+		const p = Platform;
+
+		// App type
+		const appType = p.isDesktopApp ? 'Desktop' : 'Mobile';
+
+		// Operating system
+		let os = 'Unknown';
+		if (p.isMacOS) os = 'macOS';
+		else if (p.isWin) os = 'Windows';
+		else if (p.isLinux) os = 'Linux';
+		else if (p.isIosApp) os = 'iOS';
+		else if (p.isAndroidApp) os = 'Android';
+
+		// Form factor (only relevant for mobile)
+		const formFactor = p.isMobile ? (p.isPhone ? ' (Phone)' : p.isTablet ? ' (Tablet)' : '') : '';
+
+		return `${appType} - ${os}${formFactor}`;
 	}
 }

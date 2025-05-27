@@ -7,6 +7,7 @@ import {NavigateToFile} from "./navigateToFile";
 import {ErrorComponent} from "./ErrorComponent";
 import {SyncProgressIndicator} from "./SyncNotice";
 import {ScrybbleUI} from "./ScrybbleUI";
+import {SupportPage} from "./SupportPage";
 
 export default function loadLitComponents() {
 	window.customElements.define("scrybble-ui", ScrybbleUI)
@@ -18,4 +19,5 @@ export default function loadLitComponents() {
 	window.customElements.define('navigate-to-file-btn', NavigateToFile)
 	window.customElements.define('error-view', ErrorComponent)
 	window.customElements.define('sync-progress-indicator', SyncProgressIndicator)
+	window.customElements.define('scrybble-support', SupportPage)
 }

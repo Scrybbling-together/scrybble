@@ -1,24 +1,30 @@
+import pino from "pino";
+import LogEvent = pino.LogEvent;
+import WriteFn = pino.WriteFn;
+
 interface LocalStorageTransportOptions {
 	key: string;
 	maxEntries: number;
 }
 const storageKey = 'scrybble-logs';
-const maxEntries = 5000;
+const maxEntries = 200;
 
 export function retrieveScrybbleLogs() {
-	return localStorage.getItem(storageKey);
+	return JSON.parse(localStorage.getItem(storageKey) ?? "[]");
 }
 
-export default function writeToLocalstorage(obj: any) {
-	console.log(obj)
+export default function writeToLocalstorage(obj: Record<string, any>) {
+	delete obj["hostname"];
+	delete obj["pid"];
+	delete obj["time"];
+
 	try {
 		// Get existing logs
 		const existingLogs = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
+
 		// Add new log entry with timestamp
 		const logEntry = {
-			level: obj.level,
-			msg: obj.msg,
 			...obj,
 			timestamp: new Date().toISOString(),
 		};

@@ -129,7 +129,7 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 			</div>` : nothing;
 
 		return html`
-			<div class="scrybble-container">
+			<div class="inner-container">
 				${refreshButton}
 				${error}
 				<div class="scrybble-content">

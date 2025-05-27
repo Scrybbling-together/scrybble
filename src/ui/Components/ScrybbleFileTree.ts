@@ -87,7 +87,7 @@ export class ScrybbleFileTreeComponent extends LitElement {
 			<rm-tree .tree="${this.tree}" @rm-click="${this.handleClickFileOrFolder.bind(this)}"></rm-tree>` : nothing;
 
 		return html`
-			<div class="scrybble-container">
+			<div class="inner-container">
 				${heading}
 				${error}
 				${tree}

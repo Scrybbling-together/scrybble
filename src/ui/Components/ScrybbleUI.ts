@@ -1,6 +1,5 @@
 import {html, nothing, TemplateResult} from "lit-html";
 import {ErrorMessage, Errors} from "../../errorHandling/Errors";
-import {retrieveScrybbleLogs} from "../../errorHandling/LocalStorageTransport";
 import {getIcon} from "obsidian";
 import {ScrybbleCommon} from "../../../@types/scrybble";
 import {scrybbleContext} from "../scrybbleContext";
@@ -87,17 +86,12 @@ export class ScrybbleUI extends LitElement {
 		const loadingTemplate = isLoading ? html`<div>Loading...</div>` : nothing;
 
 		return html`
-            <div style="display: flex; flex-direction: column; height: 100%;">
-                ${this.renderNavigation()}
-                <div>
-                    <div class="tree-item-self">
-                        <h1 class="tree-item-inner">Scrybble reMarkable sync</h1>
-                    </div>
-                    ${errorTemplate}
-                    ${loadingTemplate}
-                    ${error || isLoading ? nothing : this.renderCurrentView()}
-                </div>
-            </div>
+			${this.renderNavigation()}
+			<div class="scrybble-container">
+				${this.currentView === ScrybbleViewType.SUPPORT ? nothing : errorTemplate}
+				${loadingTemplate}
+				${(error && this.currentView !== ScrybbleViewType.SUPPORT) || isLoading ? nothing : this.renderCurrentView()}
+			</div>
         `;
 	}
 
@@ -107,27 +101,27 @@ export class ScrybbleUI extends LitElement {
 		return html`
             <div class="nav-header">
                 <div class="nav-buttons-container">
-                    <div style="display: flex; flex-direction: column"
+                    <button style="display: flex; flex-direction: column"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.FILE_TREE ? 'is-active' : ''}"
                         aria-label="File tree"
                         @click="${() => this.switchView(ScrybbleViewType.FILE_TREE)}">
                         <span>${getIcon("folder")}</span>
                         <span>Files</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column"
+                    </button>
+                    <button style="display: flex; flex-direction: column"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SYNC_HISTORY ? 'is-active' : ''}"
                         aria-label="Sync history"
                         @click="${() => this.switchView(ScrybbleViewType.SYNC_HISTORY)}">
                         <span>${getIcon("file-stack")}</span>
                         <span>Sync history</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column"
+                    </button>
+                    <button style="display: flex; flex-direction: column"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SUPPORT ? 'is-active' : ''}"
                         aria-label="Support"
                         @click="${() => this.switchView(ScrybbleViewType.SUPPORT)}">
                         <span>${getIcon("badge-help")}</span>
                         <span>Support</span>
-                    </div>
+                    </button>
                 </div>
             </div>
         `;
@@ -142,10 +136,7 @@ export class ScrybbleUI extends LitElement {
 			case ScrybbleViewType.SYNC_HISTORY:
 				return html`<scrybble-sync-history/>`;
 			case ScrybbleViewType.SUPPORT:
-				return html`
-                    <h1>Logs</h1>
-                    <pre>${JSON.stringify(JSON.parse(retrieveScrybbleLogs()!), null, 2)}</pre>
-                `;
+				return html`<scrybble-support/>`;
 			default:
 				return nothing;
 		}

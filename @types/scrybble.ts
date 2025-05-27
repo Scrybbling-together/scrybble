@@ -1,4 +1,6 @@
 import {ISyncQueue} from "../src/SyncQueue";
+import {PluginManifest} from "obsidian";
+import {Platform} from "esbuild";
 
 export interface Host {
 	endpoint: string;
@@ -96,4 +98,9 @@ export type ScrybbleCommon = {
 	sync: ISyncQueue;
 	settings: ScrybbleSettings;
 	fileNavigator: FileNavigator;
+	meta: {
+		scrybbleVersion: string;
+		obsidianVersion: string;
+		platformInfo: string;
+	};
 }

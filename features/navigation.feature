@@ -9,15 +9,16 @@ Feature: UI Navigation
 		And  The user clicks on the "Refresh" button
 		Then The interface should tell me "reMarkable file tree"
 
-	Scenario: Logging in
+	Scenario: You can navigate to the support page when the server is unreachable
 		Given The user is not logged in
 		When The user opens the Scrybble interface
-		Then The interface should tell me "Not logged in"
+		But The server is unreachable
+		When The user clicks on the "Support" button
+		Then The interface should tell me "Scrybble Support"
 
 	Scenario: Logging in
 		Given The user is not logged in
 		When The user opens the Scrybble interface
-		And  The user clicks on the "Refresh" button
 		Then The interface should tell me "Not logged in"
 
 	Scenario: Opening Scrybble
@@ -25,4 +26,4 @@ Feature: UI Navigation
 		When The user opens the Scrybble interface
 		Then The interface should tell me "reMarkable file tree"
 		And The interface should tell me "Current directory is /"
-			
+
