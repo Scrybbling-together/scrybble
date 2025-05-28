@@ -35,18 +35,6 @@ const errors = {
 		helpAction: html`...`
 	}),
 
-	"NOT_LOGGED_IN": (e?: Error | ResponseError) => ({
-		title: html`Not logged in`,
-		message: html`You are not logged in to Scrybble`,
-		helpAction: html`Please make sure to log-in first. Go to settings -> community plugins -> Scrybble and log in to your Scrybble account.`
-	}),
-
-	"NOT_SETUP": (e?: Error | ResponseError) => ({
-		title: html`Setup incomplete`,
-		message: html`Your Scrybble account is not fully set up yet`,
-		helpAction: html`Go to https://scrybble.ink, log in and visit the dashboard to finish setting up.`
-	}),
-
 	"TREE_LOADING_ERROR": (e?: Error | ResponseError) => ({
 		title: html`File loading error`,
 		message: html`There's a problem loading your files${formatError(e)}`,
@@ -58,6 +46,34 @@ const errors = {
 		title: html`Sync history error`,
 		message: html`There was a problem loading your sync history${formatError(e)}`,
 		helpAction: html`Please try refreshing in a minute or so, or check your connection to the Scrybble servers`,
+		details: e
+	}),
+
+	"AUTHENTICATION_CHECK_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Authentication check failed`,
+		message: html`We couldn't verify your login status${formatError(e)}`,
+		helpAction: html`Please check your internet connection and try again. If the problem persists, contact mail@scrybble.ink for support`,
+		details: e
+	}),
+
+	"OAUTH_INITIATION_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Login failed to start`,
+		message: html`We couldn't start the login process${formatError(e)}`,
+		helpAction: html`Please check your internet connection and try again. If the problem persists, contact mail@scrybble.ink for support`,
+		details: e
+	}),
+
+	"OAUTH_COMPLETION_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Login completion failed`,
+		message: html`Login was successful but we couldn't fetch your account information${formatError(e)}`,
+		helpAction: html`Please try refreshing the page. If the problem persists, contact mail@scrybble.ink for support`,
+		details: e
+	}),
+
+	"USER_INFO_FETCH_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Account information unavailable`,
+		message: html`We couldn't load your account information${formatError(e)}`,
+		helpAction: html`Please try refreshing the page or logging out and back in. If the problem persists, contact mail@scrybble.ink for support`,
 		details: e
 	}),
 
