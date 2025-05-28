@@ -14,7 +14,7 @@ export class AccountPage extends LitElement {
 	scrybble!: ScrybbleCommon;
 
 	@state()
-	private isLoading = true;
+	private isLoading = false;
 
 	@state()
 	private isLoggingIn = false;
@@ -25,13 +25,13 @@ export class AccountPage extends LitElement {
 	@state()
 	private isAuthenticated = false;
 
-	@state()
-	private userInfo: ScrybbleUser | null = null;
-
 	async connectedCallback() {
 		super.connectedCallback();
+		if (this.scrybble.user.loaded) {
+			this.isAuthenticated = true;
+		}
 		this.scrybble.setOnOAuthCompletedCallback(this.onOAuthCompleted.bind(this));
-		await this.checkAuthenticationStatus();
+		this.scrybble.setOnAuthenticatedCallback((success: boolean) => this.onAuthenticated(success));
 	}
 
 	render(): TemplateResult {
@@ -54,38 +54,13 @@ export class AccountPage extends LitElement {
 		return html`
 			<div class="account-container">
 				${errorTemplate}
-				${this.error ? nothing : (this.isAuthenticated && this.userInfo ? this.renderAuthenticatedView() : this.renderLoginView())}
+				${this.error ? nothing : (this.isAuthenticated ? this.renderAuthenticatedView() : this.renderLoginView())}
 			</div>
 		`;
 	}
 
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
 		return this;
-	}
-
-	private async checkAuthenticationStatus(): Promise<void> {
-		pino.info("Checking authentication status");
-
-		try {
-			if (this.scrybble.storage.access_token) {
-				pino.info("Access token found, fetching user info");
-				this.isLoading = true;
-				this.userInfo = await this.scrybble.api.fetchGetUser();
-				this.isAuthenticated = true;
-				pino.info("User info fetched successfully", {userId: this.userInfo.user.id});
-			} else {
-				pino.info("No access token found");
-				this.isAuthenticated = false;
-				this.userInfo = null;
-			}
-			this.error = null;
-		} catch (error) {
-			this.error = Errors.handle("AUTHENTICATION_CHECK_ERROR", error as Error);
-			this.isAuthenticated = false;
-			this.userInfo = null;
-		} finally {
-			this.isLoading = false;
-		}
 	}
 
 	private async startOAuthFlow(): Promise<void> {
@@ -103,6 +78,17 @@ export class AccountPage extends LitElement {
 		}
 	}
 
+	private async onAuthenticated(success: boolean): Promise<void> {
+		this.isLoading = false;
+		this.isLoggingIn = false;
+		this.error = null;
+		console.log(`Success? ${success}.`)
+		if (success) {
+			console.log(this.scrybble.user)
+		}
+		this.isAuthenticated = success;
+	}
+
 	private async onOAuthCompleted(): Promise<void> {
 		pino.info("OAuth flow completed, fetching user info");
 
@@ -110,15 +96,16 @@ export class AccountPage extends LitElement {
 			this.isLoading = true;
 			const user = await this.scrybble.api.fetchGetUser();
 			this.scrybble.user = user;
-			this.userInfo = user;
 			this.isAuthenticated = true;
 			this.isLoggingIn = false;
 			this.error = null;
 
-			pino.info("OAuth completion successful", {
-				userId: user.user.id,
-				hasSubscription: user.subscription_status.exists
-			});
+			if (user.loaded) {
+				pino.info("OAuth completion successful", {
+					userId: user.user.id,
+					hasSubscription: user.subscription_status.exists
+				});
+			}
 		} catch (error) {
 			this.error = Errors.handle("OAUTH_COMPLETION_ERROR", error as Error);
 			this.isLoggingIn = false;
@@ -131,7 +118,6 @@ export class AccountPage extends LitElement {
 		pino.info("Refreshing account page after error");
 		this.error = null;
 		this.isLoading = true;
-		await this.checkAuthenticationStatus();
 	}
 
 	private formatDate(dateString: string): string {
@@ -182,15 +168,18 @@ export class AccountPage extends LitElement {
 	}
 
 	private formatGumroadSubscriptionManageUrl(): string {
-		if (!this.userInfo?.subscription_status.licenseInformation?.subscription_id) {
+		if (!this.scrybble.user.loaded) return "";
+		if (!this.scrybble.user.subscription_status.licenseInformation?.subscription_id) {
 			pino.warn("Missing subscription ID for Gumroad URL");
 			return "#";
 		}
-		return `https://gumroad.com/subscriptions/${this.userInfo.subscription_status.licenseInformation.subscription_id}/manage`;
+		return `https://gumroad.com/subscriptions/${this.scrybble.user.subscription_status.licenseInformation.subscription_id}/manage`;
 	}
 
 	private renderAuthenticatedView(): TemplateResult {
-		const {userInfo} = this;
+		const userInfo = this.scrybble.user;
+		console.log(userInfo)
+		if (!userInfo.loaded) return html`Not loaded`;
 
 		return html`
 			<div class="account-card">

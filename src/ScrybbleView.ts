@@ -47,20 +47,23 @@ export class ScrybbleView extends ItemView {
 	}
 
 	private async renderView(): Promise<void> {
+		const self = this;
 		const scrybble: ScrybbleCommon = {
 			api: this.plugin,
 			storage: this.plugin,
 			sync: this.plugin.syncQueue,
 			settings: this.plugin.settings,
 			fileNavigator: new ObsidianFileNavigator(this.plugin.app),
-			user: null,
+			get user() {return self.plugin.user},
 			setOnOAuthCompletedCallback: this.plugin.setOnOAuthCompletedCallback.bind(this.plugin),
+			setOnAuthenticatedCallback: this.plugin.setOnAuthenticatedCallback.bind(this.plugin),
 			meta: {
 				scrybbleVersion: this.plugin.manifest.version,
 				obsidianVersion: apiVersion,
 				platformInfo: this.getPlatformInfo()
 			}
 		}
+
 		render(html`
 			<scrybble-ui .scrybble="${scrybble}"
 						 .onViewSwitch="${this.handleViewSwitch.bind(this)}"

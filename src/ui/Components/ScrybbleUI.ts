@@ -37,7 +37,7 @@ export class ScrybbleUI extends LitElement {
 	private async initialize() {
 		this.isLoading = true;
 
-		if (!this.scrybble.storage.access_token) {
+		if (!this.scrybble.storage.access_token || !this.scrybble.user.loaded) {
 			this.currentView = ScrybbleViewType.ACCOUNT
 			this.isLoading = false;
 			return;
@@ -45,11 +45,6 @@ export class ScrybbleUI extends LitElement {
 
 		try {
 			const state = await this.scrybble.api.fetchOnboardingState();
-			if (state !== "ready") {
-				this.error = Errors.handle("NOT_SETUP");
-				this.isLoading = false;
-				return;
-			}
 			this.error = null;
 		} catch (e) {
 			this.error = Errors.handle("GENERAL_ERROR", e as Error);
@@ -103,6 +98,7 @@ export class ScrybbleUI extends LitElement {
             <div class="nav-header">
                 <div class="nav-buttons-container">
                     <button style="display: flex; flex-direction: column"
+						?disabled="${!Boolean(this.scrybble.user)}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.FILE_TREE ? 'is-active' : ''}"
                         aria-label="File tree"
                         @click="${() => this.switchView(ScrybbleViewType.FILE_TREE)}">
@@ -110,6 +106,7 @@ export class ScrybbleUI extends LitElement {
                         <span>Files</span>
                     </button>
                     <button style="display: flex; flex-direction: column"
+						?disabled="${!Boolean(this.scrybble.user)}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SYNC_HISTORY ? 'is-active' : ''}"
                         aria-label="Sync history"
                         @click="${() => this.switchView(ScrybbleViewType.SYNC_HISTORY)}">
@@ -117,6 +114,7 @@ export class ScrybbleUI extends LitElement {
                         <span>Sync history</span>
                     </button>
                     <button style="display: flex; flex-direction: column"
+						?disabled="${!Boolean(this.scrybble.user)}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SUPPORT ? 'is-active' : ''}"
                         aria-label="Support"
                         @click="${() => this.switchView(ScrybbleViewType.SUPPORT)}">
@@ -155,4 +153,6 @@ export class ScrybbleUI extends LitElement {
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
 		return this
 	}
+
+
 }

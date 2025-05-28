@@ -39,11 +39,6 @@ export class MockScrybbleApi implements ScrybbleApi {
 		return Promise.resolve(tree);
 	}
 
-	fetchOAuthToken(username: string, password: string): Promise<{ access_token: string }> {
-		this.throwIfErrorIsConfigured("fetchOAuthToken");
-		return Promise.resolve({access_token: ""});
-	}
-
 	fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready"> {
 		this.throwIfErrorIsConfigured("fetchOnboardingState");
 		return Promise.resolve("ready");

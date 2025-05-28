@@ -4,16 +4,13 @@ import Scrybble from "../main";
 import {Errors} from "./errorHandling/Errors";
 
 export const DEFAULT_SETTINGS: ScrybbleSettings = {
-	last_successful_sync_id: -1,
 	sync_folder: "scrybble",
 	self_hosted: false,
 	custom_host: {
 		endpoint: "",
 		client_secret: ""
 	},
-	sync_state: {
-
-	}
+	sync_state: {}
 }
 
 
@@ -27,72 +24,6 @@ export class Settings extends PluginSettingTab {
 
 	display(): void {
 		const {containerEl} = this;
-
-		let password = "";
-		let username = "";
-
-		containerEl.empty();
-		containerEl.createEl('h1', {text: 'Sync ReMarkable notes'});
-
-		if (this.plugin.access_token === null) {
-			new Setting(containerEl)
-				.setName('Login')
-				.setDesc('Login details')
-				.addText(text => text
-					.setPlaceholder('Enter your username')
-					.onChange((value) => {
-						username = value;
-					}))
-				.addText(text => {
-					text.setPlaceholder('Enter your password');
-					text.inputEl.setAttribute('type', 'password');
-					text.onChange((value) => {
-						password = value;
-					});
-				})
-				.addButton((button) => {
-					button.setButtonText('Log in');
-					button.onClick(async () => {
-						try {
-							const {access_token} = await this.plugin.fetchOAuthToken(username, password);
-							localStorage.setItem('scrybble_access_token', access_token);
-							this.display();
-						} catch (error) {
-							Errors.handle(error)
-						}
-					});
-				});
-		} else {
-			new Setting(containerEl)
-				.setName('Log out')
-				.setDesc('You are currently logged in')
-				.addButton((button) => {
-					button.setButtonText('Log out');
-					button.onClick(async () => {
-						localStorage.removeItem('scrybble_access_token');
-						this.display();
-					});
-				});
-
-			new Setting(containerEl)
-				.setName('Output folder')
-				.setDesc('Folder where your synchronized files will be stored.')
-				.addText((text) => text
-					.setValue(this.plugin.settings.sync_folder)
-					.onChange((value) => {
-						this.plugin.settings.sync_folder = value;
-						this.plugin.saveSettings();
-					}));
-
-			new Setting(containerEl)
-				.setName('Manual synchronization')
-				.addButton((button) => {
-					button.setButtonText('Go');
-					button.onClick(() => {
-						this.plugin.sync();
-					})
-				});
-		}
 
 		containerEl.createEl("h2", {text: "Scrybble server"})
 

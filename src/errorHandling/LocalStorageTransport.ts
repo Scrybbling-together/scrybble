@@ -20,14 +20,15 @@ export default function writeToLocalstorage(obj: Record<string, any>) {
 
 	try {
 		// Get existing logs
-		const existingLogs = JSON.parse(localStorage.getItem(storageKey) || '[]');
-
+		const existingLogs: Record<string, any>[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
 		// Add new log entry with timestamp
 		const logEntry = {
 			...obj,
 			timestamp: new Date().toISOString(),
 		};
+
+		console.log(logEntry);
 
 		existingLogs.push(logEntry);
 

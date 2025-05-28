@@ -6,13 +6,15 @@ export interface Host {
 }
 
 export interface ScrybbleSettings {
-	last_successful_sync_id: number;
 	sync_folder: string;
 
 	self_hosted: boolean;
 
 	custom_host: Host;
 	sync_state: Record<string, number>;
+
+	access_token?: string;
+	refresh_token?: string;
 }
 
 export type SyncDelta = { id: number, download_url: string, filename: string };
@@ -62,10 +64,6 @@ export interface ScrybbleApi {
 
 	fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready">;
 
-	fetchOAuthToken(username: string, password: string): Promise<{
-		access_token: string
-	}>;
-
 	fetchGetUser(): Promise<ScrybbleUser>;
 
 	fetchInitiateOAuthPKCE(): void;
@@ -86,11 +84,16 @@ export type ContextMenuItem =
 	| {
 	isSeparator: true;
 };
+
 export interface FileNavigator {
 	openInNewTab(file: string): Promise<void>;
+
 	openInVerticalSplit(file: string): Promise<void>;
+
 	openInHorizontalSplit(file: string): Promise<void>;
+
 	getFileByPath(path: string): File | null;
+
 	showContextMenu(event: MouseEvent, items: ContextMenuItem[]): void;
 }
 
@@ -100,13 +103,14 @@ export type ScrybbleCommon = {
 	sync: ISyncQueue;
 	settings: ScrybbleSettings;
 	fileNavigator: FileNavigator;
-	user: "loading" | ScrybbleUser | null;
+	user: ScrybbleUser;
 	meta: {
 		scrybbleVersion: string;
 		obsidianVersion: string;
 		platformInfo: string;
 	};
 	setOnOAuthCompletedCallback: (callback: () => void) => void;
+	setOnAuthenticatedCallback: (onAuthenticated: (success: boolean) => void) => void;
 }
 
 export interface LicenseInformation {
@@ -128,6 +132,9 @@ export interface GumroadLicenseResponse {
 
 
 export type ScrybbleUser = {
+	loaded: false;
+} | {
+	loaded: true;
 	user: {
 		created_at: string;
 		email: string;
