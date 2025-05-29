@@ -1,12 +1,12 @@
 import {html, LitElement} from 'lit-element';
 import { property} from 'lit-element/decorators.js';
-import {States} from "../../SyncJob";
+import {SyncJobStates} from "../../SyncJob";
 import {Notice} from "obsidian";
 import {render} from "lit-html";
 
 export class SyncProgressIndicator extends LitElement {
 	@property({type: String})
-	state = States.init;
+	state = SyncJobStates.init;
 
 	@property({type: String})
 	filename = '';
@@ -42,35 +42,35 @@ export class SyncProgressIndicator extends LitElement {
 	getStageLabel(stage: 'sync' | 'process' | 'download'): string {
 		switch (stage) {
 			case 'sync':
-				if (this.state === States.init) return 'Request Sync';
-				if (this.state === States.sync_requested) return 'Requesting Sync';
-				if (this.state === States.failed_to_process && this.getStageClass('sync') === 'stage-error')
+				if (this.state === SyncJobStates.init) return 'Request Sync';
+				if (this.state === SyncJobStates.sync_requested) return 'Requesting Sync';
+				if (this.state === SyncJobStates.failed_to_process && this.getStageClass('sync') === 'stage-error')
 					return 'Failed to Request Sync';
 				if (this.getStageClass('sync') === 'stage-completed') return 'Requested Sync';
 				return 'Request Sync';
 
 			case 'process':
-				if (this.state === States.init || this.state === States.sync_requested)
+				if (this.state === SyncJobStates.init || this.state === SyncJobStates.sync_requested)
 					return 'Process File';
-				if (this.state === States.processing || this.state === States.awaiting_processing)
+				if (this.state === SyncJobStates.processing || this.state === SyncJobStates.awaiting_processing)
 					return 'Processing File';
-				if (this.state === States.failed_to_process)
+				if (this.state === SyncJobStates.failed_to_process)
 					return 'Failed to Process File';
 				if (this.getStageClass('process') === 'stage-completed')
 					return 'Processed File';
 				return 'Process File';
 
 			case 'download':
-				if (this.state === States.init ||
-					this.state === States.sync_requested ||
-					this.state === States.processing ||
-					this.state === States.awaiting_processing)
+				if (this.state === SyncJobStates.init ||
+					this.state === SyncJobStates.sync_requested ||
+					this.state === SyncJobStates.processing ||
+					this.state === SyncJobStates.awaiting_processing)
 					return 'Download';
-				if (this.state === States.ready_to_download)
+				if (this.state === SyncJobStates.ready_to_download)
 					return 'Ready to Download';
-				if (this.state === States.downloading)
+				if (this.state === SyncJobStates.downloading)
 					return 'Downloading';
-				if (this.state === States.downloaded)
+				if (this.state === SyncJobStates.downloaded)
 					return 'Downloaded';
 				// if (this.state === States.failed_to_download)
 				// 	return 'Failed to Download';
@@ -81,28 +81,28 @@ export class SyncProgressIndicator extends LitElement {
 	getStageClass(stage: 'sync' | 'process' | 'download'): string {
 		switch (stage) {
 			case 'sync':
-				if (this.state === States.sync_requested) return 'stage-waiting';
-				if (this.state === States.failed_to_process) return 'stage-error';
-				if (this.state === States.processing ||
-					this.state === States.awaiting_processing ||
-					this.state === States.ready_to_download ||
-					this.state === States.downloading ||
-					this.state === States.downloaded) return 'stage-completed';
+				if (this.state === SyncJobStates.sync_requested) return 'stage-waiting';
+				if (this.state === SyncJobStates.failed_to_process) return 'stage-error';
+				if (this.state === SyncJobStates.processing ||
+					this.state === SyncJobStates.awaiting_processing ||
+					this.state === SyncJobStates.ready_to_download ||
+					this.state === SyncJobStates.downloading ||
+					this.state === SyncJobStates.downloaded) return 'stage-completed';
 				return '';
 
 			case 'process':
-				if (this.state === States.processing ||
-					this.state === States.awaiting_processing) return 'stage-waiting';
-				if (this.state === States.failed_to_process) return 'stage-error';
-				if (this.state === States.ready_to_download ||
-					this.state === States.downloading ||
-					this.state === States.downloaded) return 'stage-completed';
+				if (this.state === SyncJobStates.processing ||
+					this.state === SyncJobStates.awaiting_processing) return 'stage-waiting';
+				if (this.state === SyncJobStates.failed_to_process) return 'stage-error';
+				if (this.state === SyncJobStates.ready_to_download ||
+					this.state === SyncJobStates.downloading ||
+					this.state === SyncJobStates.downloaded) return 'stage-completed';
 				return '';
 
 			case 'download':
-				if (this.state === States.downloading) return 'stage-waiting';
+				if (this.state === SyncJobStates.downloading) return 'stage-waiting';
 				// if (this.state === States.failed_to_download) return 'stage-error';
-				if (this.state === States.downloaded) return 'stage-completed';
+				if (this.state === SyncJobStates.downloaded) return 'stage-completed';
 				return '';
 		}
 	}
@@ -128,7 +128,7 @@ export class SyncProgressNotice {
 
 		this.indicator = new SyncProgressIndicator();
 		this.indicator.filename = filename;
-		this.indicator.state = States.init;
+		this.indicator.state = SyncJobStates.init;
 
 		this.notice.containerEl.style.whiteSpace = "normal";
 		this.notice.containerEl.style.maxWidth = "calc(var(--size-4-18) * 5 + 2 * var(--size-4-3))";
@@ -136,19 +136,19 @@ export class SyncProgressNotice {
 		render(this.indicator, this.notice.containerEl)
 	}
 
-	updateState(newState: States): void {
+	updateState(newState: SyncJobStates): void {
 		// Update the component's state
 		this.indicator.state = newState;
 
 		// If we've reached the end state, dismiss the notice after a short delay
-		if (newState === States.downloaded) {
+		if (newState === SyncJobStates.downloaded) {
 			setTimeout(() => {
 				this.notice.hide();
 			}, 2000);
 		}
 
 		// If there's an error, keep the notice longer so the user can see it
-		if (newState === States.failed_to_process) {
+		if (newState === SyncJobStates.failed_to_process) {
 			setTimeout(() => {
 				this.notice.hide();
 			}, 5000);

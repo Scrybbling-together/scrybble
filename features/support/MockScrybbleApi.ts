@@ -1,10 +1,30 @@
-import {PaginatedResponse, RMFileTree, ScrybbleApi, ScrybbleUser, SyncDelta, SyncItem} from "../../@types/scrybble";
+import {
+	PaginatedResponse,
+	RMFileTree,
+	ScrybbleApi,
+	ScrybbleSettings,
+	ScrybbleUser,
+	SyncDelta,
+	SyncItem
+} from "../../@types/scrybble";
 
 export class MockScrybbleApi implements ScrybbleApi {
 	private loggedIn: boolean = false;
+	private accessTokenExpired: boolean = false;
 
 	private errors: Record<string, number> = {};
 	private serverReachable: boolean = true;
+
+	constructor(private settings: ScrybbleSettings) {
+	}
+
+	public accessTokenIsExpired() {
+		this.accessTokenExpired = true;
+	}
+
+	public accessTokenIsValid() {
+		this.accessTokenExpired = false;
+	}
 
 	public isNotLoggedIn() {
 		this.loggedIn = false;
@@ -73,6 +93,12 @@ export class MockScrybbleApi implements ScrybbleApi {
 
 	fetchGetUser(): Promise<ScrybbleUser> {
 		this.throwIfErrorIsConfigured("fetchGetUser");
+		if (this.accessTokenExpired) {
+			const err = new Error("Token expired");
+			// @ts-ignore
+			err.status = 401;
+			return Promise.reject(err);
+		}
 		if (!this.loggedIn) {
 			const err = new Error("Not authenticated");
 			// @ts-ignore
@@ -118,6 +144,19 @@ export class MockScrybbleApi implements ScrybbleApi {
 		access_token: string;
 		refresh_token: string
 	}> {
+		this.throwIfErrorIsConfigured("fetchOAuthAccessToken");
+		this.settings.access_token = "test_access_token";
+		this.settings.refresh_token = "test_refresh_token";
+		this.accessTokenExpired = false;
 		return Promise.resolve({access_token: "test_access_token", refresh_token: "test_refresh_token"});
+	}
+
+	fetchRefreshOAuthAccessToken(): Promise<{ access_token: string; refresh_token: string }> {
+		this.throwIfErrorIsConfigured("fetchRefreshOAuthAccessToken");
+		this.settings.access_token = "new_test_access_token";
+		this.settings.refresh_token = "new_test_refresh_token";
+		this.accessTokenExpired = false;
+		this.loggedIn = true;
+		return Promise.resolve({access_token: "new_test_access_token", refresh_token: "new_test_refresh_token"});
 	}
 }

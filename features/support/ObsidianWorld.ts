@@ -1,67 +1,64 @@
-import {After, IWorldOptions, World} from "@cucumber/cucumber";
-import {ScrybbleCommon, ScrybblePersistentStorage} from "../../@types/scrybble";
+import {Before, IWorldOptions, World} from "@cucumber/cucumber";
+import {ScrybbleCommon} from "../../@types/scrybble";
 import {MockScrybbleApi} from "./MockScrybbleApi";
 import sinon, {SinonSpy} from "sinon";
 import {MockFileNavigator} from "./MockFileNavigator";
-import {expect} from "chai";
-import {PKCEUtils} from "../../src/oauth";
+import {Authentication} from "../../src/Authentication";
 import {SettingsImpl} from "../../src/SettingsImpl";
 
 export class ObsidianWorld extends World {
 	public container: HTMLDivElement | null;
 	public api: MockScrybbleApi;
+	public authentication: Authentication;
 
 	public spies: {
 		initiateOAuthFlow: SinonSpy;
+		refreshAccessToken: SinonSpy;
 		fetchGetUser: SinonSpy;
 		windowOpen: SinonSpy;
 	};
-
-	private oauthCallbacks: Array<(data: any) =>void> = [];
 
 	public readonly scrybble: ScrybbleCommon;
 
 	constructor(options: IWorldOptions) {
 		super(options);
 		this.container = null;
-		this.api = new MockScrybbleApi();
 
-		const self = this;
+		const settings = new SettingsImpl({
+			sync_folder: "scrybble",
+			sync_state: {},
+			custom_host: {
+				client_secret: "",
+				endpoint: ""
+			},
+			self_hosted: false
+		}, () => {
+			return Promise.resolve();
+		});
+
+		this.api = new MockScrybbleApi(settings);
+
+		this.authentication = new Authentication(settings, this.api);
 		this.scrybble = {
 			api: this.api,
 			sync: {
 				requestSync(filename: string) {
 				}
 			},
-			settings: new SettingsImpl({
-				sync_folder: "scrybble",
-				sync_state: {},
-				custom_host: {
-					client_secret: "",
-					endpoint: ""
-				},
-				self_hosted: false
-			}),
+			settings,
+			authentication: this.authentication,
 			fileNavigator: new MockFileNavigator(),
 			meta: {
 				scrybbleVersion: "dev",
 				obsidianVersion: "unknown",
 				platformInfo: "development"
-			},
-			initiateOAuthFlow: async () => {
-				await PKCEUtils.initiateOAuthFlow(self.scrybble.settings)
-			},
-			setOnOAuthCompletedCallback: (callback: () => void) => {
-				this.oauthCallbacks.push(callback);
-			},
-			setOnAuthenticatedCallback: (callback: (successCallback: boolean) => void) => {
-			},
-			user: {loaded: false}
+			}
 		};
 
 		this.spies = {
-			initiateOAuthFlow: sinon.spy(this.scrybble, 'initiateOAuthFlow'),
+			initiateOAuthFlow: sinon.spy(this.authentication, 'initiateOAuthFlow'),
 			fetchGetUser: sinon.spy(this.api, 'fetchGetUser'),
+			refreshAccessToken: sinon.spy(this.api, 'fetchRefreshOAuthAccessToken'),
 			windowOpen: sinon.spy(window, 'open')
 		};
 	}
@@ -90,17 +87,5 @@ export class ObsidianWorld extends World {
 		this.api.isNotLoggedIn();
 	}
 
-	async simulateOAuthCallback(data: { code: string; state: string }) {
-		// Simulate the OAuth callback being received
-		for (const callback of this.oauthCallbacks) {
-			await callback(data);
-		}
-	}
-
-	onOAuthCallback(callback: (data: any) => Promise<void>) {
-	}
-
-
 	[key: string]: any;
 }
-

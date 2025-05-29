@@ -4,7 +4,7 @@ import {html, render} from "lit-html";
 import {ScrybbleViewType} from "./ui/Components/ScrybbleUI";
 import {ObsidianFileNavigator} from "./FileNavigator";
 import {ScrybbleCommon} from "../@types/scrybble";
-import {PKCEUtils} from "./oauth";
+import {Authentication} from "./Authentication";
 
 export const SCRYBBLE_VIEW = "SCRYBBLE_VIEW";
 
@@ -54,10 +54,7 @@ export class ScrybbleView extends ItemView {
 			get sync() {return self.plugin.syncQueue},
 			get settings() {return self.plugin.settings},
 			fileNavigator: new ObsidianFileNavigator(this.plugin.app),
-			get user() {return self.plugin.user},
-			setOnOAuthCompletedCallback: this.plugin.setOnOAuthCompletedCallback.bind(this.plugin),
-			setOnAuthenticatedCallback: this.plugin.setOnAuthenticatedCallback.bind(this.plugin),
-			initiateOAuthFlow: () => PKCEUtils.initiateOAuthFlow(self.plugin.settings),
+			get authentication() {return self.plugin.authentication},
 			meta: {
 				scrybbleVersion: this.plugin.manifest.version,
 				obsidianVersion: apiVersion,

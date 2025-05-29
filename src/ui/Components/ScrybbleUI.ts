@@ -98,7 +98,7 @@ export class ScrybbleUI extends LitElement {
             <div class="nav-header">
                 <div class="nav-buttons-container">
                     <button style="display: flex; flex-direction: column"
-						?disabled="${!this.scrybble.user.loaded}"
+						?disabled="${!this.scrybble.authentication.user.loaded}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.FILE_TREE ? 'is-active' : ''}"
                         aria-label="File tree"
                         @click="${() => this.switchView(ScrybbleViewType.FILE_TREE)}">
@@ -106,7 +106,7 @@ export class ScrybbleUI extends LitElement {
                         <span>Files</span>
                     </button>
                     <button style="display: flex; flex-direction: column"
-						?disabled="${!this.scrybble.user.loaded}"
+						?disabled="${!this.scrybble.authentication.user.loaded}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SYNC_HISTORY ? 'is-active' : ''}"
                         aria-label="Sync history"
                         @click="${() => this.switchView(ScrybbleViewType.SYNC_HISTORY)}">

@@ -1,4 +1,5 @@
 import {ISyncQueue} from "../src/SyncQueue";
+import {Authentication} from "../src/Authentication";
 
 export interface Host {
 	endpoint: string;
@@ -17,6 +18,7 @@ export interface ScrybbleSettings {
 	refresh_token?: string;
 
 	get endpoint(): string;
+	save(): Promise<void>;
 }
 
 export type SyncDelta = { id: number, download_url: string, filename: string };
@@ -69,6 +71,8 @@ export interface ScrybbleApi {
 	fetchGetUser(): Promise<ScrybbleUser>;
 
 	fetchOAuthAccessToken(code: string, codeVerifier: string): Promise<{ access_token: string; refresh_token: string }>;
+
+	fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }>;
 }
 
 export interface ScrybblePersistentStorage {
@@ -104,15 +108,12 @@ export type ScrybbleCommon = {
 	sync: ISyncQueue;
 	settings: ScrybbleSettings;
 	fileNavigator: FileNavigator;
-	user: ScrybbleUser;
-	initiateOAuthFlow: () => Promise<void>;
+	authentication: Authentication;
 	meta: {
 		scrybbleVersion: string;
 		obsidianVersion: string;
 		platformInfo: string;
 	};
-	setOnOAuthCompletedCallback: (callback: () => void) => void;
-	setOnAuthenticatedCallback: (onAuthenticated: (success: boolean) => void) => void;
 }
 
 export interface LicenseInformation {

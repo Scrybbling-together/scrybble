@@ -1,4 +1,4 @@
-import {Events, States, SyncJob} from "./SyncJob";
+import {SyncJobEvents, SyncJobStates, SyncJob} from "./SyncJob";
 import {ResponseError} from "./errorHandling/Errors";
 import {basename, dirPath, sanitizeFilename} from "./support";
 import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
@@ -12,7 +12,7 @@ export interface ISyncQueue {
 export class SyncQueue implements ISyncQueue {
 	private syncJobs: SyncJob[] = [];
 
-	private readonly busyStates = [States.downloading, States.awaiting_processing];
+	private readonly busyStates = [SyncJobStates.downloading, SyncJobStates.awaiting_processing];
 
 	constructor(
 		private settings: ScrybbleSettings,
@@ -25,18 +25,18 @@ export class SyncQueue implements ISyncQueue {
 			const maxActiveJobs = 3
 			let busy = this.countBusyJobs();
 			for (let job of this.syncJobs) {
-				if (job.getState() === States.downloading || job.getState() === States.awaiting_processing) {
+				if (job.getState() === SyncJobStates.downloading || job.getState() === SyncJobStates.awaiting_processing) {
 					busy += 1;
 				}
 
 				if (busy < maxActiveJobs) {
-					if (job.getState() === States.init) {
+					if (job.getState() === SyncJobStates.init) {
 						await this.requestFileToBeSynced(job)
 						busy += 1
-					} else if (job.getState() === States.ready_to_download) {
+					} else if (job.getState() === SyncJobStates.ready_to_download) {
 						await this.download(job)
 						busy += 1
-					} else if (job.getState() === States.processing) {
+					} else if (job.getState() === SyncJobStates.processing) {
 						await this.checkProcessingState(job)
 						busy += 1
 					}
@@ -46,13 +46,13 @@ export class SyncQueue implements ISyncQueue {
 	}
 
 	async downloadProcessedFile(filename: string, download_url: string, sync_id: number) {
-		const syncJob = new SyncJob(0, States.init, filename);
+		const syncJob = new SyncJob(0, SyncJobStates.init, filename);
 		await syncJob.readyToDownload(download_url, sync_id)
 		this.syncJobs.push(syncJob)
 	}
 
 	requestSync(filename: string) {
-		const job = new SyncJob(0, States.init, filename)
+		const job = new SyncJob(0, SyncJobStates.init, filename)
 		this.syncJobs.push(job)
 	}
 
@@ -66,7 +66,7 @@ export class SyncQueue implements ISyncQueue {
 		const folderPath = await this.ensureFolderExists(this.vault, relativePath, this.settings.sync_folder)
 
 		this.onStartDownloadFile(job)
-		await job.dispatch(Events.downloadRequestSent)
+		await job.dispatch(SyncJobEvents.downloadRequestSent)
 		const response = await requestUrl({
 			method: "GET",
 			url: job.download_url

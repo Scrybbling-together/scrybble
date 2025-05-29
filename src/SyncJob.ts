@@ -1,7 +1,7 @@
 import {StateMachine, t} from "typescript-fsm";
 import {SyncProgressNotice} from "./ui/Components/SyncNotice";
 
-export enum States {
+export enum SyncJobStates {
 	// initial state
 	init = "INIT",
 
@@ -23,7 +23,7 @@ export enum States {
 	downloaded = "DOWNLOADED"
 }
 
-export enum Events {
+export enum SyncJobEvents {
 	syncRequestConfirmed = "SYNC_REQUEST_CONFIRMED",
 	syncRequestSent = "SYNC_REQUEST_SENT",
 	sentProcessingCheckRequest = "CHECKING_PROCESSING_STATE",
@@ -35,13 +35,13 @@ export enum Events {
 	errorReceived = "ERROR_RECEIVED"
 }
 
-export class SyncJob extends StateMachine<States, Events> {
+export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 	public download_url?: string;
 	public sync_id?: number;
 
 	constructor(
 		key: number = 0,
-		init: States.init = States.init,
+		init: SyncJobStates.init = SyncJobStates.init,
 		public filename: string
 	) {
 		super(init, [], console);
@@ -50,42 +50,42 @@ export class SyncJob extends StateMachine<States, Events> {
 		notice.updateState(init); // Initialize notice with current state
 
 		const transitions = [
-			t(States.init, Events.syncRequestSent, States.sync_requested, () => {
-				notice.updateState(States.sync_requested);
+			t(SyncJobStates.init, SyncJobEvents.syncRequestSent, SyncJobStates.sync_requested, () => {
+				notice.updateState(SyncJobStates.sync_requested);
 			}),
-			t(States.init, Events.ready, States.ready_to_download, () => {
-				notice.updateState(States.ready_to_download);
-			}),
-
-			t(States.sync_requested, Events.syncRequestConfirmed, States.processing, () => {
-				notice.updateState(States.processing);
+			t(SyncJobStates.init, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
+				notice.updateState(SyncJobStates.ready_to_download);
 			}),
 
-			t(States.processing, Events.sentProcessingCheckRequest, States.awaiting_processing, () => {
-				notice.updateState(States.awaiting_processing);
-			}),
-			t(States.awaiting_processing, Events.ready, States.ready_to_download, () => {
-				notice.updateState(States.ready_to_download);
-			}),
-			t(States.awaiting_processing, Events.stillProcessing, States.processing, () => {
-				notice.updateState(States.processing);
-			}),
-			t(States.awaiting_processing, Events.failedToProcess, States.failed_to_process, () => {
-				notice.updateState(States.failed_to_process);
+			t(SyncJobStates.sync_requested, SyncJobEvents.syncRequestConfirmed, SyncJobStates.processing, () => {
+				notice.updateState(SyncJobStates.processing);
 			}),
 
-			t(States.processing, Events.ready, States.ready_to_download, () => {
-				notice.updateState(States.ready_to_download);
+			t(SyncJobStates.processing, SyncJobEvents.sentProcessingCheckRequest, SyncJobStates.awaiting_processing, () => {
+				notice.updateState(SyncJobStates.awaiting_processing);
 			}),
-			t(States.processing, Events.failedToProcess, States.failed_to_process, () => {
-				notice.updateState(States.failed_to_process);
+			t(SyncJobStates.awaiting_processing, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
+				notice.updateState(SyncJobStates.ready_to_download);
+			}),
+			t(SyncJobStates.awaiting_processing, SyncJobEvents.stillProcessing, SyncJobStates.processing, () => {
+				notice.updateState(SyncJobStates.processing);
+			}),
+			t(SyncJobStates.awaiting_processing, SyncJobEvents.failedToProcess, SyncJobStates.failed_to_process, () => {
+				notice.updateState(SyncJobStates.failed_to_process);
 			}),
 
-			t(States.ready_to_download, Events.downloadRequestSent, States.downloading, () => {
-				notice.updateState(States.downloading);
+			t(SyncJobStates.processing, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
+				notice.updateState(SyncJobStates.ready_to_download);
 			}),
-			t(States.downloading, Events.downloaded, States.downloaded, () => {
-				notice.updateState(States.downloaded);
+			t(SyncJobStates.processing, SyncJobEvents.failedToProcess, SyncJobStates.failed_to_process, () => {
+				notice.updateState(SyncJobStates.failed_to_process);
+			}),
+
+			t(SyncJobStates.ready_to_download, SyncJobEvents.downloadRequestSent, SyncJobStates.downloading, () => {
+				notice.updateState(SyncJobStates.downloading);
+			}),
+			t(SyncJobStates.downloading, SyncJobEvents.downloaded, SyncJobStates.downloaded, () => {
+				notice.updateState(SyncJobStates.downloaded);
 			}),
 		];
 		this.addTransitions(transitions)
@@ -94,27 +94,27 @@ export class SyncJob extends StateMachine<States, Events> {
 	async readyToDownload(download_url: string, sync_id: number) {
 		this.download_url = download_url;
 		this.sync_id = sync_id;
-		await this.dispatch(Events.ready)
+		await this.dispatch(SyncJobEvents.ready)
 	}
 
 	async downloaded() {
-		await this.dispatch(Events.downloaded)
+		await this.dispatch(SyncJobEvents.downloaded)
 	}
 
 	async syncRequestConfirmed(sync_id: number) {
-		await this.dispatch(Events.syncRequestConfirmed);
+		await this.dispatch(SyncJobEvents.syncRequestConfirmed);
 		this.sync_id = sync_id;
 	}
 
 	async sentProcessingRequest() {
-		await this.dispatch(Events.sentProcessingCheckRequest);
+		await this.dispatch(SyncJobEvents.sentProcessingCheckRequest);
 	}
 
 	async fileStillProcessing() {
-		await this.dispatch(Events.stillProcessing);
+		await this.dispatch(SyncJobEvents.stillProcessing);
 	}
 
 	async syncRequestSent() {
-		await this.dispatch(Events.syncRequestSent);
+		await this.dispatch(SyncJobEvents.syncRequestSent);
 	}
 }

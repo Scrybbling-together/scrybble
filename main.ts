@@ -15,11 +15,8 @@ import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
 import loadLitComponents from "./src/ui/Components/loadComponents";
 import {SyncQueue} from "./src/SyncQueue";
 import {pino} from "./src/errorHandling/logging";
-import {PKCEUtils} from "./src/oauth";
+import {Authentication} from "./src/Authentication";
 import {SettingsImpl} from "./src/SettingsImpl";
-
-class NotAuthenticatedError extends Error {
-}
 
 // only needs to happen once, ever.
 loadLitComponents()
@@ -28,8 +25,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	// @ts-ignore -- onload acts as a constructor.
 	public settings: ScrybbleSettings;
 	public syncQueue: SyncQueue;
-	public user: ScrybbleCommon['user'] = {loaded: false};
-	private onOAuthCompleted: () => Promise<void>;
+	public authentication: Authentication;
 
 	get access_token(): string | null {
 		return this.settings.access_token ?? null;
@@ -39,27 +35,16 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return this.settings.refresh_token ?? null;
 	}
 
-	setOnOAuthCompletedCallback(callback: () => Promise<void>) {
-		this.onOAuthCompleted = callback;
-	}
-
-	setOnAuthenticatedCallback(callback: () => Promise<void>) {
-		this.onAuthenticated = callback;
-	}
-
 	async onload() {
 		pino.info("Loading Scrybble plugin")
-		this.settings = await this.loadSettings()
+		this.settings = new SettingsImpl(await this.loadData(), async () => {
+			await this.saveData(this.settings);
+		});
+		this.authentication = new Authentication(this.settings, this);
 
 		this.registerObsidianProtocolHandler(`scrybble-oauth`, async (data) => {
-			const {code, state} = data
-			const tokenData = await PKCEUtils.onOAuthCallbackReceived(this, {code, state});
-			const {access_token, refresh_token} = tokenData
-			this.settings.access_token = access_token;
-			this.settings.refresh_token = refresh_token;
-			await this.saveSettings();
-			await this.onOAuthCompleted();
-		})
+			await this.authentication.onOAuthCallbackReceived(data as {code: string, state: string});
+		});
 
 		this.syncQueue = new SyncQueue(
 			this.settings,
@@ -69,7 +54,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			},
 			(job) => {
 				this.settings.sync_state[job.filename] = job.sync_id
-				this.saveSettings()
+				this.settings.save()
 			}
 		);
 
@@ -110,56 +95,14 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	}
 
 	async authenticatedRequest(url: string, options: any = {}) {
-		let response;
-
-		if (!this.access_token) {
-			throw new NotAuthenticatedError("No access token found");
-		}
-
-		try {
-			pino.debug(`Requesting ${url}`);
-			response = await requestUrl({
-				...options,
-				url,
-				headers: {
-					...options.headers,
-					"Authorization": `Bearer ${this.access_token}`
-				}
-			});
-		} catch (error) {
-			pino.warn(`Got an error when requesting ${url}`);
-			// If we get a 401, try to refresh the token
-			if (error.status === 401 && this.refresh_token) {
-				pino.warn("Got a 401, refreshing")
-				try {
-					await this.refreshAccessToken();
-					// Retry the request with new token
-					pino.info("Retrying original request after refreshing the access token successfully");
-					response = await requestUrl({
-						...options,
-						url,
-						headers: {
-							...options.headers,
-							"Authorization": `Bearer ${this.access_token}`
-						}
-					});
-				} catch (refreshError) {
-					// If refresh fails, throw the original error
-					throw error;
-				}
-			} else {
-				pino.error(error, "You were unexpectedly logged out, please try to log back in again.");
-				this.settings.refresh_token = undefined;
-				this.settings.access_token = undefined;
-				this.user = {loaded: false};
-				await this.saveSettings();
-				await this.onAuthenticated(false);
-
-				throw error;
+		return requestUrl({
+			...options,
+			url,
+			headers: {
+				...options.headers,
+				"Authorization": `Bearer ${this.access_token}`
 			}
-		}
-
-		return response;
+		});
 	}
 
 	async sync() {
@@ -174,14 +117,6 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 				await this.syncQueue.downloadProcessedFile(filename, download_url, id)
 			}
 		}
-	}
-
-	async loadSettings(): Promise<ScrybbleSettings> {
-		this.settings = new SettingsImpl(await this.loadData());
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
 	}
 
 	async fetchSyncDelta(): Promise<ReadonlyArray<SyncDelta>> {
@@ -268,52 +203,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return {...response.json, loaded: true};
 	}
 
-	async refreshAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
-		if (!this.refresh_token) {
-			throw new Error("No refresh token available");
-		}
-
-		try {
-			const response = await this.fetchRefreshOAuthAccessToken();
-
-			this.settings.access_token = response.access_token;
-			this.settings.refresh_token = response.refresh_token;
-			pino.info("Successfully refreshed OAuth token");
-			await this.saveSettings();
-			this.user = await this.fetchGetUser();
-			await this.onAuthenticated(true)
-		} catch (e) {
-			this.settings.access_token = undefined;
-			this.settings.refresh_token = undefined;
-			await this.saveSettings();
-			this.user = {loaded: false};
-			await this.onAuthenticated(false)
-			throw e;
-		}
-	}
-
-	private onAuthenticated: (success: boolean) => Promise<void> = async (success: boolean) => {
-	};
-
-	private async checkAccountStatus() {
-		try {
-			this.user = await this.fetchGetUser();
-			await this.onAuthenticated(true)
-			await this.sync()
-		} catch (e) {
-			this.user = {loaded: false};
-			await this.onAuthenticated(false)
-		}
-	}
-
-	private async exchangeCodeForTokens(code: string, state: string): Promise<{
-		access_token: string,
-		refresh_token: string
-	}> {
-
-	}
-
-	private async fetchOAuthAccessToken(code: string, codeVerifier: string) {
+	public async fetchOAuthAccessToken(code: string, codeVerifier: string) {
 		const response = await requestUrl({
 			url: `${this.settings.endpoint}/oauth/token`,
 			method: 'POST',
@@ -337,12 +227,18 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return response.json;
 	}
 
-	private async fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
+	private async checkAccountStatus() {
+		await this.authentication.initializeAuth();
+		if (this.authentication.isAuthenticated()) {
+			await this.sync();
+		}
+	}
+	public async fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
 		pino.info(`Sending request for a refresh token with ${this.refresh_token}`);
 		const formData = new URLSearchParams({
 			grant_type: 'refresh_token',
 			client_id: '2',
-			refresh_token: this.refresh_token,
+			refresh_token: this.refresh_token!,
 			scope: ''
 		});
 		const response = await requestUrl({
