@@ -10,9 +10,12 @@ Given("The user has logged in locally", function (this: ObsidianWorld) {
 	this.hasLoggedInLocally();
 });
 
-Given("The user's access token is valid on the server", function (this: ObsidianWorld) {
+function loggedIn(this: ObsidianWorld) {
 	this.api.isLoggedIn();
-});
+}
+
+Given("The user's access token is valid on the server", loggedIn);
+Given("The server creates access tokens for the user", loggedIn);
 
 Then("The OAuth flow should be initiated", function (this: ObsidianWorld) {
 	expect(this.spies.initiateOAuthFlow).to.have.been.calledOnce;
