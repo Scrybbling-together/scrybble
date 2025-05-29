@@ -15,6 +15,8 @@ export interface ScrybbleSettings {
 
 	access_token?: string;
 	refresh_token?: string;
+
+	get endpoint(): string;
 }
 
 export type SyncDelta = { id: number, download_url: string, filename: string };
@@ -66,7 +68,7 @@ export interface ScrybbleApi {
 
 	fetchGetUser(): Promise<ScrybbleUser>;
 
-	fetchInitiateOAuthPKCE(): void;
+	fetchOAuthAccessToken(code: string, codeVerifier: string): Promise<{ access_token: string; refresh_token: string }>;
 }
 
 export interface ScrybblePersistentStorage {
@@ -98,12 +100,12 @@ export interface FileNavigator {
 }
 
 export type ScrybbleCommon = {
-	storage: ScrybblePersistentStorage;
 	api: ScrybbleApi;
 	sync: ISyncQueue;
 	settings: ScrybbleSettings;
 	fileNavigator: FileNavigator;
 	user: ScrybbleUser;
+	initiateOAuthFlow: () => Promise<void>;
 	meta: {
 		scrybbleVersion: string;
 		obsidianVersion: string;

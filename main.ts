@@ -1,32 +1,35 @@
 import {Plugin, requestUrl, WorkspaceLeaf} from 'obsidian';
 import {
-	Host,
 	PaginatedResponse,
 	RMFileTree,
-	ScrybbleApi, ScrybbleCommon, ScrybblePersistentStorage,
-	ScrybbleSettings, ScrybbleUser,
+	ScrybbleApi,
+	ScrybbleCommon,
+	ScrybblePersistentStorage,
+	ScrybbleSettings,
+	ScrybbleUser,
 	SyncDelta,
 	SyncItem
 } from "./@types/scrybble";
-import {DEFAULT_SETTINGS, Settings} from "./src/settings";
+import {Settings} from "./src/settings";
 import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
 import loadLitComponents from "./src/ui/Components/loadComponents";
 import {SyncQueue} from "./src/SyncQueue";
 import {pino} from "./src/errorHandling/logging";
 import {PKCEUtils} from "./src/oauth";
+import {SettingsImpl} from "./src/SettingsImpl";
 
-class NotAuthenticatedError extends Error{}
+class NotAuthenticatedError extends Error {
+}
 
 // only needs to happen once, ever.
 loadLitComponents()
 
-export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePersistentStorage  {
+export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePersistentStorage {
 	// @ts-ignore -- onload acts as a constructor.
 	public settings: ScrybbleSettings;
 	public syncQueue: SyncQueue;
 	public user: ScrybbleCommon['user'] = {loaded: false};
 	private onOAuthCompleted: () => Promise<void>;
-	private onAuthenticated: (success: boolean) => Promise<void> = async (success: boolean) => {};
 
 	get access_token(): string | null {
 		return this.settings.access_token ?? null;
@@ -34,10 +37,6 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 
 	get refresh_token(): string | null {
 		return this.settings.refresh_token ?? null;
-	}
-
-	get base_url(): string {
-		return this.getHost().endpoint;
 	}
 
 	setOnOAuthCompletedCallback(callback: () => Promise<void>) {
@@ -54,9 +53,11 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 
 		this.registerObsidianProtocolHandler(`scrybble-oauth`, async (data) => {
 			const {code, state} = data
-			const {refresh_token, access_token} = await this.exchangeCodeForTokens(code, state);
-			localStorage.setItem('scrybble_access_token', access_token);
-			localStorage.setItem('scrybble_refresh_token', refresh_token);
+			const tokenData = await PKCEUtils.onOAuthCallbackReceived(this, {code, state});
+			const {access_token, refresh_token} = tokenData
+			this.settings.access_token = access_token;
+			this.settings.refresh_token = refresh_token;
+			await this.saveSettings();
 			await this.onOAuthCompleted();
 		})
 
@@ -64,10 +65,11 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 			this.settings,
 			this.app.vault,
 			this,
-			function onStartDownloadFile(job) {},
-			 (job) => {
-				 this.settings.sync_state[job.filename] = job.sync_id
-				 this.saveSettings()
+			function onStartDownloadFile(job) {
+			},
+			(job) => {
+				this.settings.sync_state[job.filename] = job.sync_id
+				this.saveSettings()
 			}
 		);
 
@@ -85,17 +87,6 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 		});
 
 		this.app.workspace.onLayoutReady(this.checkAccountStatus.bind(this));
-	}
-
-	private async checkAccountStatus() {
-		try {
-			this.user = await this.fetchGetUser();
-			await this.onAuthenticated(true)
-			await this.sync()
-		} catch (e) {
-			this.user = {loaded: false};
-			await this.onAuthenticated(false)
-		}
 	}
 
 	async showScrybbleFiletree() {
@@ -185,10 +176,8 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 		}
 	}
 
-
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		return this.settings as ScrybbleSettings;
+	async loadSettings(): Promise<ScrybbleSettings> {
+		this.settings = new SettingsImpl(await this.loadData());
 	}
 
 	async saveSettings() {
@@ -196,7 +185,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	}
 
 	async fetchSyncDelta(): Promise<ReadonlyArray<SyncDelta>> {
-		const response = await this.authenticatedRequest(`${this.base_url}/api/sync/delta`, {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/delta`, {
 			method: "GET",
 			headers: {
 				"Accept": "application/json",
@@ -206,7 +195,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	}
 
 	async fetchPaginatedSyncHistory(page: number = 1): Promise<PaginatedResponse<SyncItem>> {
-		const response = await this.authenticatedRequest(`${this.base_url}/api/sync/inspect-sync?paginated=true&page=${page}`, {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/inspect-sync?paginated=true&page=${page}`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json"
@@ -217,7 +206,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	}
 
 	async fetchFileTree(path: string = "/"): Promise<RMFileTree> {
-		const response = await this.authenticatedRequest(`${this.base_url}/api/sync/RMFileTree`, {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/RMFileTree`, {
 			method: "POST",
 			headers: {
 				"Accept": "application/json",
@@ -229,7 +218,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	}
 
 	async fetchSyncState(sync_id: number) {
-		const response = await this.authenticatedRequest(`${this.base_url}/api/sync/status`, {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/status`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -242,7 +231,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	}
 
 	async fetchRequestFileToBeSynced(filePath: string): Promise<{ sync_id: number; filename: string; }> {
-		const response = await this.authenticatedRequest(`${this.base_url}/api/sync/file`, {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/file`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -257,7 +246,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	}
 
 	async fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready"> {
-		const response = await this.authenticatedRequest(`${this.base_url}/api/sync/onboardingState`, {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/onboardingState`, {
 			method: "GET",
 			headers: {
 				"accept": "application/json",
@@ -269,7 +258,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 	}
 
 	async fetchGetUser(): Promise<ScrybbleUser> {
-		const response = await this.authenticatedRequest(`${this.base_url}/api/sync/user`, {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/user`, {
 			method: "GET",
 			headers: {
 				"accept": "application/json",
@@ -279,92 +268,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 		return {...response.json, loaded: true};
 	}
 
-	public async exchangeCodeForTokens(code: string, state: string): Promise<{access_token: string, refresh_token: string}> {
-		// Verify state parameter
-		const storedState = localStorage.getItem('scrybble_oauth_state');
-		if (!storedState || storedState !== state) {
-			throw new Error('Invalid state parameter');
-		}
-
-		// Get stored code verifier
-		const codeVerifier = localStorage.getItem('scrybble_code_verifier');
-		if (!codeVerifier) {
-			throw new Error('Missing code verifier');
-		}
-
-		try {
-			// Exchange authorization code for tokens
-			const tokenData = await this.fetchOAuthAccessToken(code, codeVerifier);
-
-			this.settings.access_token = tokenData.access_token;
-			this.settings.refresh_token = tokenData.refresh_token;
-			await this.saveSettings();
-
-			// Clean up stored PKCE parameters
-			localStorage.removeItem('scrybble_code_verifier');
-			localStorage.removeItem('scrybble_oauth_state');
-
-			return {
-				access_token: tokenData.access_token,
-				refresh_token: tokenData.refresh_token
-			};
-		} catch (error) {
-			// Clean up on error
-			localStorage.removeItem('scrybble_code_verifier');
-			localStorage.removeItem('scrybble_oauth_state');
-			throw error;
-		}
-	}
-
-	private async fetchOAuthAccessToken(code: string, codeVerifier: string) {
-		const response = await requestUrl({
-			url: `${this.base_url}/oauth/token`,
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Accept': 'application/json'
-			},
-			body: JSON.stringify({
-				grant_type: 'authorization_code',
-				client_id: 2,
-				code: code,
-				redirect_uri: 'obsidian://scrybble-oauth',
-				code_verifier: codeVerifier
-			})
-		});
-
-		if (response.status !== 200) {
-			throw new Error(`Token exchange failed: ${response.status}`);
-		}
-
-		return response.json;
-	}
-
-	async fetchInitiateOAuthPKCE() {
-		const codeVerifier = PKCEUtils.generateCodeVerifier();
-		const codeChallenge = await PKCEUtils.generateCodeChallenge(codeVerifier);
-		const state = PKCEUtils.generateState();
-
-		const params = new URLSearchParams({
-			client_id: 2,
-			redirect_uri: "obsidian://scrybble-oauth",
-			response_type: 'code',
-			scope: '',
-			state,
-			code_challenge: codeChallenge,
-			code_challenge_method: 'S256'
-		});
-
-		localStorage.setItem('scrybble_code_verifier', codeVerifier);
-		localStorage.setItem('scrybble_oauth_state', state);
-
-		const authUrl = `${this.base_url}/oauth/authorize?${params.toString()}`;
-
-		// Open the authorization URL in the default browser
-		window.open(authUrl, '_blank');
-	}
-
-	async refreshAccessToken(): Promise<{access_token: string, refresh_token: string}> {
+	async refreshAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
 		if (!this.refresh_token) {
 			throw new Error("No refresh token available");
 		}
@@ -388,7 +292,52 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 		}
 	}
 
-	private async fetchRefreshOAuthAccessToken(): Promise<{access_token: string, refresh_token: string}>{
+	private onAuthenticated: (success: boolean) => Promise<void> = async (success: boolean) => {
+	};
+
+	private async checkAccountStatus() {
+		try {
+			this.user = await this.fetchGetUser();
+			await this.onAuthenticated(true)
+			await this.sync()
+		} catch (e) {
+			this.user = {loaded: false};
+			await this.onAuthenticated(false)
+		}
+	}
+
+	private async exchangeCodeForTokens(code: string, state: string): Promise<{
+		access_token: string,
+		refresh_token: string
+	}> {
+
+	}
+
+	private async fetchOAuthAccessToken(code: string, codeVerifier: string) {
+		const response = await requestUrl({
+			url: `${this.settings.endpoint}/oauth/token`,
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Accept': 'application/json'
+			},
+			body: JSON.stringify({
+				grant_type: 'authorization_code',
+				client_id: 2,
+				code: code,
+				redirect_uri: 'obsidian://scrybble-oauth',
+				code_verifier: codeVerifier
+			})
+		});
+
+		if (response.status !== 200) {
+			throw new Error(`Token exchange failed: ${response.status}`);
+		}
+
+		return response.json;
+	}
+
+	private async fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
 		pino.info(`Sending request for a refresh token with ${this.refresh_token}`);
 		const formData = new URLSearchParams({
 			grant_type: 'refresh_token',
@@ -397,7 +346,7 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 			scope: ''
 		});
 		const response = await requestUrl({
-			url: `${this.base_url}/oauth/token`,
+			url: `${this.settings.endpoint}/oauth/token`,
 			method: "POST",
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
@@ -405,21 +354,8 @@ export default class Scrybble extends Plugin  implements ScrybbleApi, ScrybblePe
 			},
 			body: formData.toString()
 		})
-		console.log(response.status, response.json);
 
 		return response.json;
 	}
-
-	getHost(): Host {
-		if (this.settings.self_hosted) {
-			return this.settings.custom_host;
-		} else {
-			return {
-				endpoint: "https://scrybble.ink",
-				client_secret: "4L2wSQjPFAbGQFs6nfQkxxdNPBkWdfe86CIOxGlc"
-			};
-		}
-	}
-
 }
 

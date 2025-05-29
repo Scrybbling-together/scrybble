@@ -1,9 +1,18 @@
 import {PaginatedResponse, RMFileTree, ScrybbleApi, ScrybbleUser, SyncDelta, SyncItem} from "../../@types/scrybble";
-import {t} from "typescript-fsm";
 
 export class MockScrybbleApi implements ScrybbleApi {
+	private loggedIn: boolean = false;
+
 	private errors: Record<string, number> = {};
 	private serverReachable: boolean = true;
+
+	public isNotLoggedIn() {
+		this.loggedIn = false;
+	}
+
+	public isLoggedIn() {
+		this.loggedIn = true;
+	}
 
 	public requestWillFailWithStatusCode(requestName: string, statusCode: number) {
 		this.errors[requestName] = statusCode;
@@ -19,15 +28,6 @@ export class MockScrybbleApi implements ScrybbleApi {
 
 	public requestGoesAsNormal(requestName: string) {
 		delete this.errors[requestName];
-	}
-
-	private throwIfErrorIsConfigured(requestName: string) {
-		if (!this.serverReachable) {
-			throw new Error("ERR_CONNECTION_REFUSED");
-		}
-		if (requestName in this.errors) {
-			throw new Error(`Request failed, status ${this.errors[requestName]}`);
-		}
 	}
 
 	async fetchFileTree(path: string): Promise<RMFileTree> {
@@ -72,32 +72,52 @@ export class MockScrybbleApi implements ScrybbleApi {
 	}
 
 	fetchGetUser(): Promise<ScrybbleUser> {
-		return Promise.resolve({
-			user: {
-				name: "Test user",
-				email: "test@scrybble.local",
-				id: 1,
-				created_at: "2025-05-05"
-			},
-			subscription_status: {
-				exists: true,
-				licenseInformation: {
-					subscription_id: "8yFSEPV-yKKLQwC2jJQ68w==",
-					active: true,
-					order_number: "abc",
-					sale_id: "def",
-					uses: 0
+		this.throwIfErrorIsConfigured("fetchGetUser");
+		if (!this.loggedIn) {
+			const err = new Error("Not authenticated");
+			// @ts-ignore
+			err.status = 401;
+			return Promise.reject(err);
+		}
+		return Promise.resolve(
+			{
+				loaded: true,
+				user: {
+					name: "Test user",
+					email: "test@scrybble.local",
+					id: 1,
+					created_at: "2025-05-05"
 				},
-				lifetime: true,
-				license: "liceeeense"
-			},
-			total_syncs: 0
-		});
+				subscription_status: {
+					exists: true,
+					licenseInformation: {
+						subscription_id: "8yFSEPV-yKKLQwC2jJQ68w==",
+						active: true,
+						order_number: "abc",
+						sale_id: "def",
+						uses: 0
+					},
+					lifetime: true,
+					license: "liceeeense"
+				},
+				total_syncs: 32
+			}
+		);
 	}
 
-	fetchInitiateOAuthPKCE(): void {
+	private throwIfErrorIsConfigured(requestName: string) {
+		if (!this.serverReachable) {
+			throw new Error("ERR_CONNECTION_REFUSED");
+		}
+		if (requestName in this.errors) {
+			throw new Error(`Request failed, status ${this.errors[requestName]}`);
+		}
 	}
 
+	fetchOAuthAccessToken(code: string, codeVerifier: string): Promise<{
+		access_token: string;
+		refresh_token: string
+	}> {
+		return Promise.resolve({access_token: "test_access_token", refresh_token: "test_refresh_token"});
+	}
 }
-
-export const api = new MockScrybbleApi();

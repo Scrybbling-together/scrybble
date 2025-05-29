@@ -37,7 +37,7 @@ export class ScrybbleUI extends LitElement {
 	private async initialize() {
 		this.isLoading = true;
 
-		if (!this.scrybble.storage.access_token || !this.scrybble.user.loaded) {
+		if (!this.scrybble.settings.access_token) {
 			this.currentView = ScrybbleViewType.ACCOUNT
 			this.isLoading = false;
 			return;
@@ -98,7 +98,7 @@ export class ScrybbleUI extends LitElement {
             <div class="nav-header">
                 <div class="nav-buttons-container">
                     <button style="display: flex; flex-direction: column"
-						?disabled="${!Boolean(this.scrybble.user)}"
+						?disabled="${!this.scrybble.user.loaded}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.FILE_TREE ? 'is-active' : ''}"
                         aria-label="File tree"
                         @click="${() => this.switchView(ScrybbleViewType.FILE_TREE)}">
@@ -106,7 +106,7 @@ export class ScrybbleUI extends LitElement {
                         <span>Files</span>
                     </button>
                     <button style="display: flex; flex-direction: column"
-						?disabled="${!Boolean(this.scrybble.user)}"
+						?disabled="${!this.scrybble.user.loaded}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SYNC_HISTORY ? 'is-active' : ''}"
                         aria-label="Sync history"
                         @click="${() => this.switchView(ScrybbleViewType.SYNC_HISTORY)}">
@@ -114,7 +114,6 @@ export class ScrybbleUI extends LitElement {
                         <span>Sync history</span>
                     </button>
                     <button style="display: flex; flex-direction: column"
-						?disabled="${!Boolean(this.scrybble.user)}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SUPPORT ? 'is-active' : ''}"
                         aria-label="Support"
                         @click="${() => this.switchView(ScrybbleViewType.SUPPORT)}">

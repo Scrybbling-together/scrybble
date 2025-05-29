@@ -70,7 +70,7 @@ export class AccountPage extends LitElement {
 			this.isLoggingIn = true;
 			this.error = null;
 
-			this.scrybble.api.fetchInitiateOAuthPKCE();
+			await this.scrybble.initiateOAuthFlow();
 			pino.info("OAuth flow initiated successfully");
 		} catch (error) {
 			this.error = Errors.handle("OAUTH_INITIATION_ERROR", error as Error);

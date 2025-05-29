@@ -31,11 +31,15 @@
 		"@lit/context": "^1.1.5",
 		"@types/chai": "^5.2.2",
 		"@types/jsdom": "^21.1.7",
+		"@types/sinon": "^17.0.4",
+		"@types/sinon-chai": "^4.0.0",
 		"chai": "^5.2.0",
 		"jszip": "^3.10.1",
 		"lit-element": "^4.2.0",
 		"lit-html": "^3.3.0",
 		"pino": "^9.7.0",
+		"sinon": "^20.0.0",
+		"sinon-chai": "^4.0.0",
 		"typescript-fsm": "^1.6.0"
 	}
 }
