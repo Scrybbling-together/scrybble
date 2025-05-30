@@ -1,14 +1,44 @@
-import {ScrybbleApi, ScrybbleSettings, ScrybbleUser} from "../@types/scrybble";
+import {DeviceTokenResponse, ScrybbleApi, ScrybbleSettings, ScrybbleUser} from "../@types/scrybble";
 import {pino} from "./errorHandling/logging";
 import {ResponseError} from "./errorHandling/Errors";
 import {StateMachine, t} from "typescript-fsm";
+
+export type DeviceFlowError =
+	| 'authorization_pending'
+	| 'slow_down'
+	| 'access_denied'
+	| 'expired_token';
+
+export interface DeviceFlowErrorResponse {
+	data?: {
+		error?: DeviceFlowError;
+		error_description?: string;
+	};
+}
+
+
+export function isDeviceFlowError(response: any): response is DeviceFlowErrorResponse {
+	return response && typeof response === 'object' && "error" in response;
+}
+
+
+export function getDeviceFlowResponseType(response: any): DeviceFlowError | "success" | null {
+	if (isDeviceFlowError(response)) {
+		return response.error;
+	} else if ("access_token" in response) {
+		return "success";
+	}
+	return null;
+}
 
 export enum AuthStates {
 	INIT = "INIT",
 
 	FETCHING_USER = "FETCHING_USER",
 
-	WAITING_FOR_OAUTH_CALLBACK = "WAITING_FOR_OAUTH_CALLBACK",
+	REQUESTING_DEVICE_CODE = "REQUESTING_DEVICE_CODE",
+	WAITING_FOR_USER_AUTHORIZATION = "WAITING_FOR_USER_AUTHORIZATION",
+	POLLING_FOR_TOKEN = "POLLING_FOR_TOKEN",
 	REFRESHING_TOKEN = "REFRESHING_TOKEN",
 
 	AUTHENTICATED = "AUTHENTICATED",
@@ -31,12 +61,29 @@ export enum AuthEvents {
 
 	LOGIN_REQUESTED = "LOGIN_REQUESTED",
 	LOGOUT_REQUESTED = "LOGOUT_REQUESTED",
+
+	DEVICE_CODE_RECEIVED = "DEVICE_CODE_RECEIVED",
+	DEVICE_CODE_REQUEST_FAILED = "DEVICE_CODE_REQUEST_FAILED",
+	POLLING_STARTED = "POLLING_STARTED",
+	AUTHORIZATION_EXPIRED = "AUTHORIZATION_EXPIRED",
+	AUTHORIZATION_DENIED = "AUTHORIZATION_DENIED",
+	DEVICE_FLOW_CANCELED = "DEVICE_FLOW_CANCELED",
+}
+
+export interface DeviceAuthorizationData {
+	device_code: string;
+	user_code: string;
+	verification_uri: string;
+	expires_in: number;
+	interval: number;
 }
 
 export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 	public user: ScrybbleUser = {loaded: false};
+	public deviceAuth: DeviceAuthorizationData | null = null;
 
 	private listeners: ((new_state: AuthStates) => void)[] = [];
+	private pollingTimer: number | null = null;
 
 	broadcastStateChange() {
 		for (const listener of this.listeners) {
@@ -54,12 +101,23 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 		// Define all state transitions
 		const transitions = [
 			// From INIT
-			t(AuthStates.INIT, AuthEvents.LOGIN_REQUESTED, AuthStates.WAITING_FOR_OAUTH_CALLBACK, this.broadcastStateChange.bind(this)),
+			t(AuthStates.INIT, AuthEvents.LOGIN_REQUESTED, AuthStates.REQUESTING_DEVICE_CODE, this.broadcastStateChange.bind(this)),
 			t(AuthStates.INIT, AuthEvents.TOKEN_FOUND_ON_STARTUP, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
 			t(AuthStates.INIT, AuthEvents.NO_TOKEN_FOUND_ON_STARTUP, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
 
-			// From WAITING_FOR_OAUTH_CALLBACK
-			t(AuthStates.WAITING_FOR_OAUTH_CALLBACK, AuthEvents.ACCESS_TOKEN_RECEIVED, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
+			// From REQUESTING_DEVICE_CODE
+			t(AuthStates.REQUESTING_DEVICE_CODE, AuthEvents.DEVICE_CODE_RECEIVED, AuthStates.WAITING_FOR_USER_AUTHORIZATION, this.broadcastStateChange.bind(this)),
+			t(AuthStates.REQUESTING_DEVICE_CODE, AuthEvents.DEVICE_CODE_REQUEST_FAILED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			// From WAITING_FOR_USER_AUTHORIZATION
+			t(AuthStates.WAITING_FOR_USER_AUTHORIZATION, AuthEvents.POLLING_STARTED, AuthStates.POLLING_FOR_TOKEN, this.broadcastStateChange.bind(this)),
+			t(AuthStates.WAITING_FOR_USER_AUTHORIZATION, AuthEvents.DEVICE_FLOW_CANCELED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			// From POLLING_FOR_TOKEN
+			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.ACCESS_TOKEN_RECEIVED, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
+			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.AUTHORIZATION_EXPIRED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.AUTHORIZATION_DENIED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.DEVICE_FLOW_CANCELED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
 
 			// From FETCHING_USER
 			t(AuthStates.FETCHING_USER, AuthEvents.USER_FETCHED, AuthStates.AUTHENTICATED, this.broadcastStateChange.bind(this)),
@@ -73,7 +131,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			t(AuthStates.REFRESHING_TOKEN, AuthEvents.REFRESH_FAILURE, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
 
 			// From UNAUTHENTICATED
-			t(AuthStates.UNAUTHENTICATED, AuthEvents.LOGIN_REQUESTED, AuthStates.WAITING_FOR_OAUTH_CALLBACK, this.broadcastStateChange.bind(this)),
+			t(AuthStates.UNAUTHENTICATED, AuthEvents.LOGIN_REQUESTED, AuthStates.REQUESTING_DEVICE_CODE, this.broadcastStateChange.bind(this)),
 			t(AuthStates.UNAUTHENTICATED, AuthEvents.ACCESS_TOKEN_EXPIRED, AuthStates.REFRESHING_TOKEN, this.broadcastStateChange.bind(this))
 		];
 
@@ -102,101 +160,168 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 		}
 	}
 
-	private generateCodeVerifier(): string {
-		return this.generateRandomString(128);
-	}
-
-	private async generateCodeChallenge(codeVerifier: string): Promise<string> {
-		const data = new TextEncoder().encode(codeVerifier);
-		const digest = await crypto.subtle.digest('SHA-256', data);
-		return btoa(String.fromCharCode(...new Uint8Array(digest)))
-			.replace(/\+/g, '-')
-			.replace(/\//g, '_')
-			.replace(/=+$/, '');
-	}
-
-	private generateState(): string {
-		return this.generateRandomString(40);
-	}
-
-	public async initiateOAuthFlow(settings: ScrybbleSettings) {
-		const codeVerifier = this.generateCodeVerifier();
-		const codeChallenge = await this.generateCodeChallenge(codeVerifier);
-		const state = this.generateState();
-
-		const params = new URLSearchParams({
-			client_id: '2',
-			redirect_uri: "obsidian://scrybble-oauth",
-			response_type: 'code',
-			scope: '',
-			state,
-			code_challenge: codeChallenge,
-			code_challenge_method: 'S256'
-		});
-
-		localStorage.setItem('scrybble_code_verifier', codeVerifier);
-		localStorage.setItem('scrybble_oauth_state', state);
-
-		const authUrl = `${settings.custom_host.endpoint}/oauth/authorize?${params.toString()}`;
-
+	/**
+	 * Start the Device Authorization Grant flow
+	 */
+	public async initiateDeviceFlow(): Promise<void> {
 		await this.dispatch(AuthEvents.LOGIN_REQUESTED);
 
-		// Open the authorization URL in the default browser
-		window.open(authUrl, '_blank');
-	}
-
-	public async onOAuthCallbackReceived(data: { code: string; state: string; }) {
-		const {code, state} = data
-		// Verify state parameter
-		const storedState = localStorage.getItem('scrybble_oauth_state');
-		if (!storedState || storedState !== state) {
-			throw new Error('Invalid state parameter');
-		}
-
-		// Get stored code verifier
-		const codeVerifier = localStorage.getItem('scrybble_code_verifier');
-		if (!codeVerifier) {
-			throw new Error('Missing code verifier');
-		}
-
 		try {
-			// Exchange authorization code for tokens
-			const tokenData = await this.api.fetchOAuthAccessToken(code, codeVerifier);
+			this.deviceAuth = await this.api.fetchDeviceCode();
+			await this.dispatch(AuthEvents.DEVICE_CODE_RECEIVED);
 
-			// Clean up stored PKCE parameters
-			localStorage.removeItem('scrybble_code_verifier');
-			localStorage.removeItem('scrybble_oauth_state');
+			// Start polling after a short delay to let UI update
+			setTimeout(() => this.startPolling(), 1000);
 
-			this.settings.access_token = tokenData.access_token;
-			this.settings.refresh_token = tokenData.refresh_token;
-			await this.settings.save();
-
-			await this.dispatch(AuthEvents.ACCESS_TOKEN_RECEIVED);
-
-			// Now fetch user data
-			await this.fetchAndSetUser();
-
-			return {
-				access_token: tokenData.access_token,
-				refresh_token: tokenData.refresh_token
-			};
 		} catch (error) {
-			// Clean up on error
-			localStorage.removeItem('scrybble_code_verifier');
-			localStorage.removeItem('scrybble_oauth_state');
-
-			// Transition to unauthenticated state on token exchange failure
-			pino.error(error, "Failed to exchange OAuth code for access token");
-			await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
-
+			pino.error(error, "Failed to request device code");
+			await this.dispatch(AuthEvents.DEVICE_CODE_REQUEST_FAILED);
 			throw error;
 		}
 	}
 
-	private generateRandomString(length: number): string {
-		const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-		const values = crypto.getRandomValues(new Uint8Array(length));
-		return values.reduce((acc, x) => acc + charset[x % charset.length], '');
+	/**
+	 * Start polling for token
+	 */
+	private async startPolling(): Promise<void> {
+		if (!this.deviceAuth) {
+			pino.error("Cannot start polling: no device auth data");
+			return;
+		}
+
+		await this.dispatch(AuthEvents.POLLING_STARTED);
+
+		const startTime = Date.now();
+		const expirationTime = startTime + (this.deviceAuth.expires_in * 1000);
+		let currentInterval = this.deviceAuth.interval;
+
+		const poll = async (): Promise<void> => {
+			if (Date.now() >= expirationTime) {
+				pino.warn("Device authorization expired");
+				this.stopPolling();
+				await this.dispatch(AuthEvents.AUTHORIZATION_EXPIRED);
+				return;
+			}
+
+			if (this.getState() !== AuthStates.POLLING_FOR_TOKEN) {
+				this.stopPolling();
+				return;
+			}
+
+			try {
+				const tokenData = await this.api.fetchPollForDeviceToken(this.deviceAuth!.device_code);
+				const responseType = getDeviceFlowResponseType(tokenData);
+				console.log("responseType", responseType);
+
+				switch (responseType) {
+					case 'success':
+						this.stopPolling();
+						this.deviceAuth = null;
+
+						this.settings.access_token = tokenData.access_token;
+						this.settings.refresh_token = tokenData.refresh_token;
+						await this.settings.save();
+
+						await this.dispatch(AuthEvents.ACCESS_TOKEN_RECEIVED);
+						await this.fetchAndSetUser();
+						break;
+
+					case 'authorization_pending':
+						// User hasn't authorized yet, continue polling
+						this.scheduleNextPoll(currentInterval, poll);
+						break;
+
+					case 'slow_down':
+						// Server requests slower polling
+						currentInterval += 5;
+						this.scheduleNextPoll(currentInterval, poll);
+						break;
+
+					case 'access_denied':
+						// User denied the authorization
+						pino.info("User denied device authorization");
+						this.stopPolling();
+						this.deviceAuth = null;
+						await this.dispatch(AuthEvents.AUTHORIZATION_DENIED);
+						break;
+
+					case 'expired_token':
+						// Device code expired
+						pino.warn("Device code expired");
+						this.stopPolling();
+						this.deviceAuth = null;
+						await this.dispatch(AuthEvents.AUTHORIZATION_EXPIRED);
+						break;
+
+					default:
+						// Other error
+						pino.error(tokenData, "Unexpected error during device polling");
+						this.stopPolling();
+						this.deviceAuth = null;
+						await this.dispatch(AuthEvents.AUTHORIZATION_DENIED);
+						break;
+				}
+
+
+
+			} catch (error) {
+
+			}
+		};
+
+		// Start the first poll
+		this.scheduleNextPoll(currentInterval, poll);
+	}
+	private scheduleNextPoll(interval: number, pollFunction: () => Promise<void>): void {
+		this.pollingTimer = window.setTimeout(pollFunction, interval * 1000);
+	}
+
+	/**
+	 * Stop polling for token
+	 */
+	private stopPolling(): void {
+		if (this.pollingTimer) {
+			clearTimeout(this.pollingTimer);
+			this.pollingTimer = null;
+		}
+	}
+
+	/**
+	 * Cancel the device flow
+	 */
+	public async cancelDeviceFlow(): Promise<void> {
+		this.stopPolling();
+		this.deviceAuth = null;
+		await this.dispatch(AuthEvents.DEVICE_FLOW_CANCELED);
+	}
+
+	/**
+	 * Copy verification code to clipboard
+	 */
+	public async copyUserCodeToClipboard(): Promise<boolean> {
+		if (!this.deviceAuth?.user_code) {
+			return false;
+		}
+
+		try {
+			await navigator.clipboard.writeText(this.deviceAuth.user_code);
+			return true;
+		} catch (error) {
+			pino.warn("Failed to copy to clipboard", error);
+			return false;
+		}
+	}
+
+	/**
+	 * Open verification URL in browser
+	 */
+	public openVerificationUrl(): void {
+		if (!this.deviceAuth?.verification_uri) {
+			pino.warn("No verification URI available");
+			return;
+		}
+
+		window.open(this.deviceAuth.verification_uri, '_blank');
 	}
 
 	async refreshAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
@@ -248,6 +373,8 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 	}
 
 	public async logout(): Promise<void> {
+		this.stopPolling();
+		this.deviceAuth = null;
 		this.settings.access_token = undefined;
 		this.settings.refresh_token = undefined;
 		this.user = {loaded: false};

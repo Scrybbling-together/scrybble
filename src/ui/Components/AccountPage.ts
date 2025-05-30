@@ -20,6 +20,9 @@ export class AccountPage extends LitElement {
 	@state()
 	private error: ErrorMessage | null = null;
 
+	@state()
+	private copySuccess = false;
+
 	async connectedCallback() {
 		super.connectedCallback();
 
@@ -60,16 +63,21 @@ export class AccountPage extends LitElement {
 		this.requestUpdate();
 	};
 
+
 	private renderStateBasedContent(): TemplateResult {
 		switch (this.authState) {
 			case AuthStates.INIT:
 				return this.renderLoadingView("Initializing...");
 
+			case AuthStates.REQUESTING_DEVICE_CODE:
+				return this.renderLoadingView("Preparing authentication...");
+
+			case AuthStates.WAITING_FOR_USER_AUTHORIZATION:
+			case AuthStates.POLLING_FOR_TOKEN:
+				return this.renderDeviceAuthorizationView();
+
 			case AuthStates.FETCHING_USER:
 				return this.renderLoadingView("Fetching user information...");
-
-			case AuthStates.WAITING_FOR_OAUTH_CALLBACK:
-				return this.renderWaitingForOAuthView();
 
 			case AuthStates.REFRESHING_TOKEN:
 				return this.renderLoadingView("Refreshing authentication...");
@@ -85,15 +93,14 @@ export class AccountPage extends LitElement {
 					<div>Unknown state: ${this.authState}</div>`;
 		}
 	}
-
-	private async startOAuthFlow(): Promise<void> {
-		pino.info("Starting OAuth flow");
+	private async startDeviceFlow(): Promise<void> {
+		pino.info("Starting Device Authorization flow");
 
 		try {
 			this.error = null;
-			await this.scrybble.authentication.initiateOAuthFlow(this.scrybble.settings);
+			await this.scrybble.authentication.initiateDeviceFlow(this.scrybble.settings);
 		} catch (error) {
-			this.error = Errors.handle("OAUTH_INITIATION_ERROR", error as Error);
+			this.error = Errors.handle("DEVICE_AUTH_INITIATION_ERROR", error as Error);
 		}
 	}
 
@@ -104,6 +111,26 @@ export class AccountPage extends LitElement {
 	private async handleErrorRetry(): Promise<void> {
 		pino.info("Retrying after error");
 		this.error = null;
+	}
+
+	private async copyUserCode(): Promise<void> {
+		const success = await this.scrybble.authentication.copyUserCodeToClipboard();
+		if (success) {
+			this.copySuccess = true;
+			setTimeout(() => {
+				this.copySuccess = false;
+				this.requestUpdate();
+			}, 2000);
+			this.requestUpdate();
+		}
+	}
+
+	private openVerificationUrl(): void {
+		this.scrybble.authentication.openVerificationUrl();
+	}
+
+	private async cancelDeviceFlow(): Promise<void> {
+		await this.scrybble.authentication.cancelDeviceFlow();
 	}
 
 	private formatDate(dateString: string): string {
@@ -128,16 +155,143 @@ export class AccountPage extends LitElement {
 		`;
 	}
 
-	private renderWaitingForOAuthView(): TemplateResult {
+	private renderDeviceAuthorizationView(): TemplateResult {
+		const deviceAuth = this.scrybble.authentication.deviceAuth;
+		if (!deviceAuth) {
+			return this.renderLoadingView("Loading authorization...");
+		}
+
+		const isPolling = this.authState === AuthStates.POLLING_FOR_TOKEN;
+
+		return html`
+        <div class="account-card">
+            <div class="device-auth-header">
+                <div class="auth-icon">
+                    ${getIcon("smartphone")}
+                </div>
+                <h2>Complete Authorization</h2>
+                <p>To connect your Scrybble account, follow these steps:</p>
+            </div>
+
+            <div class="device-auth-steps">
+                <div class="step ${isPolling ? 'step-completed' : ''}">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Open the authorization page</h3>
+                        <p>Click the button below to open the authorization page in your browser:</p>
+                        <button 
+                            class="verification-url-button" 
+                            @click="${this.openVerificationUrl}">
+                            <div class="button-icon">${getIcon("external-link")}</div>
+                            <span>Open Authorization Page</span>
+                        </button>
+                        <div class="url-display">
+                            <code>${deviceAuth.verification_uri}</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step ${isPolling ? 'step-completed' : ''}">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Enter the verification code</h3>
+                        <p>On the authorization page, enter this code:</p>
+                        <div class="code-display">
+                            <div class="user-code">
+                                <code>${deviceAuth.user_code}</code>
+                                <button 
+                                    class="copy-code-button ${this.copySuccess ? 'success' : ''}"
+                                    @click="${this.copyUserCode}"
+                                    title="Copy verification code">
+                                    ${this.copySuccess ?
+			html`<div class="button-icon">${getIcon("check")}</div><span>Copied!</span>` :
+			html`<div class="button-icon">${getIcon("copy")}</div><span>Copy Code</span>`
+		}
+                                </button>
+                            </div>
+                            <p class="code-hint">This code expires in ${Math.floor(deviceAuth.expires_in / 60)} minutes</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step ${isPolling ? 'step-active' : ''}">
+                    <div class="step-number">
+                        ${isPolling ? html`<div class="step-spinner">${getIcon("loader-2")}</div>` : '3'}
+                    </div>
+                    <div class="step-content">
+                        <h3>${isPolling ? 'Waiting for authorization...' : 'Return here'}</h3>
+                        ${isPolling ?
+			html`
+                                <p>Please complete the authorization process in your browser.</p>
+                                <div class="polling-status">
+                                    <p>This window will update automatically once authorization is complete.</p>
+                                </div>
+                            ` :
+			html`<p>After authorizing in your browser, this page will automatically update. Keep this window open!</p>`
+		}
+                    </div>
+                </div>
+            </div>
+
+            <div class="device-auth-actions">
+                <button 
+                    class="cancel-button" 
+                    @click="${this.cancelDeviceFlow}">
+                    <div class="button-icon">${getIcon("x")}</div>
+                    <span>Cancel</span>
+                </button>
+            </div>
+
+            <div class="device-auth-help">
+                <details>
+                    <summary>Need help?</summary>
+                    <div class="help-content">
+                        <p><strong>The authorization page didn't open?</strong></p>
+                        <p>Manually go to: <code>${deviceAuth.verification_uri}</code></p>
+                        
+                        <p><strong>Having trouble copying the code?</strong></p>
+                        <p>Manually type: <strong>${deviceAuth.user_code}</strong></p>
+                        
+                        <p><strong>Code not working?</strong></p>
+                        <p>Make sure you're logged into the correct Scrybble account in your browser.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+    `;
+	}
+	private renderPollingView(): TemplateResult {
+		const deviceAuth = this.scrybble.authentication.deviceAuth;
+
 		return html`
 			<div class="account-card">
-				<div class="oauth-waiting">
+				<div class="polling-container">
 					<div class="spinner">
 						${getIcon("loader-2")}
 					</div>
-					<h3>Waiting for authentication</h3>
-					<p>Please complete the authentication process in your browser.</p>
-					<p class="hint">This window will update automatically once authentication is complete.</p>
+					<h3>Waiting for authorization</h3>
+					<p>Please complete the authorization process in your browser.</p>
+					
+					${deviceAuth ? html`
+						<div class="polling-reminder">
+							<p>If you haven't already, please:</p>
+							<ol>
+								<li>Go to <strong>${deviceAuth.verification_uri}</strong></li>
+								<li>Enter code: <strong>${deviceAuth.user_code}</strong></li>
+								<li>Authorize the application</li>
+							</ol>
+						</div>
+					` : nothing}
+
+					<div class="polling-actions">
+						<button 
+							class="secondary-button" 
+							@click="${this.cancelDeviceFlow}">
+							Cancel
+						</button>
+					</div>
+
+					<p class="polling-hint">This window will update automatically once authorization is complete.</p>
 				</div>
 			</div>
 		`;
@@ -157,7 +311,7 @@ export class AccountPage extends LitElement {
 				<div class="account-actions">
 					<button
 						class="primary-button"
-						@click="${this.startOAuthFlow}">
+						@click="${this.startDeviceFlow}">
 						<div class="button-icon">
 							${getIcon("log-in")}
 						</div>
@@ -166,8 +320,13 @@ export class AccountPage extends LitElement {
 				</div>
 
 				<div class="account-help">
-					<p>After clicking "Sign in", you'll be redirected to your browser to complete the authentication
-						process.</p>
+					<h3>How it works:</h3>
+					<ol>
+						<li>Click "Sign in with Scrybble" above</li>
+						<li>A browser window will open with an authorization page</li>
+						<li>Enter the verification code shown in Obsidian</li>
+						<li>Return to Obsidian - you'll be automatically signed in!</li>
+					</ol>
 				</div>
 			</div>
 		`;

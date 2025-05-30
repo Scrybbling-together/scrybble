@@ -73,6 +73,10 @@ export interface ScrybbleApi {
 	fetchOAuthAccessToken(code: string, codeVerifier: string): Promise<{ access_token: string; refresh_token: string }>;
 
 	fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }>;
+
+	fetchPollForDeviceToken(deviceCode: string): Promise<DeviceTokenResponse>;
+
+	fetchDeviceCode(): Promise<DeviceCodeResponse>;
 }
 
 export interface ScrybblePersistentStorage {
@@ -146,4 +150,19 @@ export type ScrybbleUser = {
 	},
 	subscription_status: GumroadLicenseResponse;
 	total_syncs: number;
+}
+
+export interface DeviceCodeResponse {
+	device_code: string;
+	user_code: string;
+	verification_uri: string;
+	expires_in: number;
+	interval: number;
+}
+
+export interface DeviceTokenResponse {
+	access_token: string;
+	refresh_token: string;
+	token_type: string;
+	expires_in: number;
 }

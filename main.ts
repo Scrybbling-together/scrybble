@@ -1,5 +1,7 @@
 import {Plugin, requestUrl, WorkspaceLeaf} from 'obsidian';
 import {
+	DeviceCodeResponse,
+	DeviceTokenResponse,
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
@@ -17,6 +19,7 @@ import {SyncQueue} from "./src/SyncQueue";
 import {pino} from "./src/errorHandling/logging";
 import {Authentication} from "./src/Authentication";
 import {SettingsImpl} from "./src/SettingsImpl";
+import {ResponseError} from "./src/errorHandling/Errors";
 
 // only needs to happen once, ever.
 loadLitComponents()
@@ -41,10 +44,10 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			await this.saveData(this.settings);
 		});
 		this.authentication = new Authentication(this.settings, this);
-
-		this.registerObsidianProtocolHandler(`scrybble-oauth`, async (data) => {
-			await this.authentication.onOAuthCallbackReceived(data as {code: string, state: string});
-		});
+		//
+		// this.registerObsidianProtocolHandler(`scrybble-oauth`, async (data) => {
+		// 	await this.authentication.onOAuthCallbackReceived(data as {code: string, state: string});
+		// });
 
 		this.syncQueue = new SyncQueue(
 			this.settings,
@@ -223,6 +226,51 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		if (response.status !== 200) {
 			throw new Error(`Token exchange failed: ${response.status}`);
 		}
+
+		return response.json;
+	}
+
+	async fetchDeviceCode(): Promise<DeviceCodeResponse> {
+		const response = await requestUrl({
+			url: `${this.settings.endpoint}/oauth/device/code`,
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+				'Accept': 'application/json',
+			},
+			body: new URLSearchParams({
+				client_id: '01972250-9214-7159-ae68-45a841b071e4', // Your device client ID
+				scope: '', // Adjust scopes as needed
+			}).toString(),
+		});
+
+		const data = response.json;
+
+		// Validate response structure
+		if (!data.device_code || !data.user_code || !data.verification_uri) {
+			throw new Error('Invalid device code response format');
+		}
+
+		return data;
+	}
+
+
+	async fetchPollForDeviceToken(deviceCode: string): Promise<DeviceTokenResponse> {
+		const response = await requestUrl({
+			url: `${this.settings.endpoint}/oauth/token`,
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+				'Accept': 'application/json',
+			},
+			body: new URLSearchParams({
+				grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+				client_id: '01972250-9214-7159-ae68-45a841b071e4', // Your device client ID
+				device_code: deviceCode,
+				client_secret: "ci3rL0u7S4pl2fgGQMELEWXYKKbWdnBz3P9D2q9A"
+			}).toString(),
+			throw: false
+		});
 
 		return response.json;
 	}
