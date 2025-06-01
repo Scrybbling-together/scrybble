@@ -75,7 +75,7 @@ function isSuccessResponse(deviceTokenResponse: DeviceTokenResponse): deviceToke
 }
 
 export class Authentication extends StateMachine<AuthStates, AuthEvents> {
-	public user: ScrybbleUser = {loaded: false};
+	public user: ScrybbleUser | null = null;
 	public deviceAuth: DeviceAuthorizationData | null = null;
 
 	private listeners: ((new_state: AuthStates) => void)[] = [];
@@ -357,7 +357,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			this.settings.refresh_token = undefined;
 			this.settings.access_token = undefined;
 			await this.settings.save();
-			this.user = {loaded: false};
+			this.user = null;
 			await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
 			throw error;
 		}
@@ -368,7 +368,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 		this.deviceAuth = null;
 		this.settings.access_token = undefined;
 		this.settings.refresh_token = undefined;
-		this.user = {loaded: false};
+		this.user = null;
 		await this.settings.save();
 		await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
 	}

@@ -2,7 +2,7 @@ import "../support/MockObsidian"
 import {Given, Then, When} from "@cucumber/cucumber";
 import {html, render} from "lit-html";
 import {expect} from "chai";
-import loadLitComponents from "../../src/ui/Components/loadComponents";
+import loadLitComponents from "../../src/ui/loadComponents";
 import {ObsidianWorld} from "../support/ObsidianWorld";
 
 loadLitComponents();

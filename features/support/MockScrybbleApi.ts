@@ -1,5 +1,6 @@
 import {
-	DeviceCodeResponse, DeviceFlowError, DeviceTokenResponse,
+	AuthenticateWithGumroadLicenseResponse,
+	DeviceCodeResponse, DeviceFlowError, DeviceTokenResponse, OneTimeCodeResponse,
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
@@ -8,6 +9,7 @@ import {
 	SyncDelta,
 	SyncItem
 } from "../../@types/scrybble";
+import {t} from "typescript-fsm";
 
 export class MockScrybbleApi implements ScrybbleApi {
 	private loggedIn: boolean = false;
@@ -110,13 +112,13 @@ export class MockScrybbleApi implements ScrybbleApi {
 		}
 		return Promise.resolve(
 			{
-				loaded: true,
 				user: {
 					name: "Test user",
 					email: "test@scrybble.local",
 					id: 1,
 					created_at: "2025-05-05"
 				},
+				onboarding_state: "ready",
 				subscription_status: {
 					exists: true,
 					licenseInformation: {
@@ -193,5 +195,17 @@ export class MockScrybbleApi implements ScrybbleApi {
 
 	authorizeDeviceToken() {
 		this.pollingState = "authenticated";
+	}
+
+	async sendGumroadLicense(license: string): Promise<AuthenticateWithGumroadLicenseResponse> {
+		return {
+			newState: "ready"
+		};
+	}
+
+	async sendOneTimeCode(code: string): Promise<OneTimeCodeResponse> {
+		return {
+			newState: "ready"
+		};
 	}
 }

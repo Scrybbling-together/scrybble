@@ -1,14 +1,15 @@
-import {RmDir} from "./RmDir";
-import {RmFile} from "./RmFile";
-import {RmFileTree} from "./RmFileTree";
-import {ScrybbleFileTreeComponent} from "./ScrybbleFileTree";
-import {ScrybbleSyncHistoryComponent} from "./SyncHistory";
-import {NavigateToFile} from "./navigateToFile";
-import {ErrorComponent} from "./ErrorComponent";
-import {SyncProgressIndicator} from "./SyncNotice";
-import {ScrybbleUI} from "./ScrybbleUI";
-import {SupportPage} from "./SupportPage";
-import {AccountPage} from "./AccountPage";
+import {RmDir} from "./Components/RmDir";
+import {RmFile} from "./Components/RmFile";
+import {RmFileTree} from "./Components/RmFileTree";
+import {ScrybbleFileTreeComponent} from "./Pages/ScrybbleFileTree";
+import {ScrybbleSyncHistoryComponent} from "./Pages/SyncHistory";
+import {NavigateToFile} from "./Components/navigateToFile";
+import {ErrorComponent} from "./Components/ErrorComponent";
+import {SyncProgressIndicator} from "./Components/SyncNotice";
+import {ScrybbleUI} from "./Pages/ScrybbleUI";
+import {SupportPage} from "./Pages/SupportPage";
+import {AccountPage} from "./Pages/AccountPage";
+import {ScrybbleOnboarding} from "./Pages/OnboardingPage";
 
 export default function loadLitComponents() {
 	window.customElements.define("rm-tree", RmFileTree)
@@ -24,4 +25,5 @@ export default function loadLitComponents() {
 	window.customElements.define('scrybble-sync-history', ScrybbleSyncHistoryComponent)
 	window.customElements.define('scrybble-support', SupportPage)
 	window.customElements.define('scrybble-account', AccountPage)
+	window.customElements.define('scrybble-onboarding', ScrybbleOnboarding)
 }

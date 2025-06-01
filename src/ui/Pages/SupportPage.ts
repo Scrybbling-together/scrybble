@@ -129,7 +129,8 @@ export class SupportPage extends LitElement {
 	private getEnvironment(): string {
 		return `- Obsidian version: ${this.scrybble.meta.obsidianVersion}
 - Scrybble version: ${this.scrybble.meta.scrybbleVersion}
-- Platform: ${this.scrybble.meta.platformInfo}`;
+- Platform: ${this.scrybble.meta.platformInfo};
+- Email: ${this.scrybble.authentication.user?.user.email ?? "Please type your Scrybble e-mail here"}`;
 	}
 
 	private getBugReportTemplate(): string {

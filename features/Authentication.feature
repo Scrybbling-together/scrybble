@@ -36,6 +36,7 @@ Feature: OAuth Authentication
 		*    The server creates access tokens for the user
 		*    The user should be logged in
 
+		# After logging in, navigation should be accessible
 		When The user clicks on the "Files" button
 		Then The interface should say "reMarkable file tree"
 

@@ -1,7 +1,7 @@
 import {html, nothing, TemplateResult} from "lit-html";
-import {ErrorMessage, Errors} from "../../errorHandling/Errors";
+import {ErrorMessage} from "../../errorHandling/Errors";
 import {getIcon} from "obsidian";
-import {ScrybbleCommon} from "../../../@types/scrybble";
+import { ScrybbleCommon} from "../../../@types/scrybble";
 import {scrybbleContext} from "../scrybbleContext";
 import {provide} from "@lit/context";
 import {LitElement} from "lit-element";
@@ -12,7 +12,8 @@ export enum ScrybbleViewType {
 	FILE_TREE = "file_tree",
 	SYNC_HISTORY = "sync_history",
 	SUPPORT = "support",
-	ACCOUNT = "login"
+	ACCOUNT = "login",
+	ONBOARDING = "onboarding"
 }
 
 export class ScrybbleUI extends LitElement {
@@ -36,29 +37,26 @@ export class ScrybbleUI extends LitElement {
 	onErrorRefresh!: () => Promise<void>;
 
 	private async initialize() {
-		this.isLoading = true;
-
 		this.scrybble.authentication.addStateChangeListener((state) => {
 			if (state === AuthStates.AUTHENTICATED) {
+				if (this.scrybble.authentication.user?.onboarding_state !== "ready") {
+					this.currentView = ScrybbleViewType.ONBOARDING;
+				}
 				this.requestUpdate();
 			}
 		});
 
 		if (!this.scrybble.settings.access_token) {
 			this.currentView = ScrybbleViewType.ACCOUNT
-			this.isLoading = false;
 			return;
 		}
+	}
 
-
-		try {
-			const state = await this.scrybble.api.fetchOnboardingState();
-			this.error = null;
-		} catch (e) {
-			this.error = Errors.handle("GENERAL_ERROR", e as Error);
-		} finally {
-			this.isLoading = false;
+	private shouldDisableNavButton(): boolean {
+		if (this.currentView === ScrybbleViewType.ONBOARDING) {
+			return this.scrybble.authentication.user!.onboarding_state !== "ready";
 		}
+		return !this.scrybble.authentication.user;
 	}
 
 	async connectedCallback() {
@@ -75,26 +73,22 @@ export class ScrybbleUI extends LitElement {
 
 	async handleErrorRefresh(): Promise<void> {
 		this.error = null;
-		this.isLoading = true;
 		await this.initialize();
 		await this.onErrorRefresh();
 	}
 
 	render(): TemplateResult {
-		const { error, isLoading } = this;
+		const { error } = this;
 
 		const errorTemplate = error ? html`
             <error-view .error="${error}" .actions="${[html`
                 <button class="retry" @click="${() => this.handleErrorRefresh()}">Refresh</button>`]}"/>` : nothing;
 
-		const loadingTemplate = isLoading ? html`<div>Loading...</div>` : nothing;
-
 		return html`
 			${this.renderNavigation()}
 			<div class="scrybble-container">
 				${this.currentView === ScrybbleViewType.SUPPORT ? nothing : errorTemplate}
-				${loadingTemplate}
-				${(error && this.currentView !== ScrybbleViewType.SUPPORT) || isLoading ? nothing : this.renderCurrentView()}
+				${(error && this.currentView !== ScrybbleViewType.SUPPORT) ? nothing : this.renderCurrentView()}
 			</div>
         `;
 	}
@@ -103,43 +97,44 @@ export class ScrybbleUI extends LitElement {
 		const { currentView } = this;
 
 		return html`
-            <div class="nav-header">
-                <div class="nav-buttons-container">
-                    <button style="display: flex; flex-direction: column"
-						?disabled="${!this.scrybble.authentication.user.loaded}"
-                        class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.FILE_TREE ? 'is-active' : ''}"
-                        aria-label="${this.scrybble.authentication.user.loaded ? "File tree" : "Please log in first"}"
-                        @click="${() => this.switchView(ScrybbleViewType.FILE_TREE)}">
-                        <span>${getIcon("folder")}</span>
-                        <span>Files</span>
-                    </button>
-                    <button style="display: flex; flex-direction: column"
-						?disabled="${!this.scrybble.authentication.user.loaded}"
-                        class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SYNC_HISTORY ? 'is-active' : ''}"
-							aria-label="${this.scrybble.authentication.user.loaded ? "Sync history" : "Please log in first"}"
-                        @click="${() => this.switchView(ScrybbleViewType.SYNC_HISTORY)}">
-                        <span>${getIcon("file-stack")}</span>
-                        <span>Sync history</span>
-                    </button>
-                    <button style="display: flex; flex-direction: column"
-                        class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SUPPORT ? 'is-active' : ''}"
-                        aria-label="Support"
-                        @click="${() => this.switchView(ScrybbleViewType.SUPPORT)}">
-                        <span>${getIcon("badge-help")}</span>
-                        <span>Support</span>
-                    </button>
+			<div class="nav-header">
+				<div class="nav-buttons-container">
 					<button style="display: flex; flex-direction: column"
+							?disabled="${this.shouldDisableNavButton()}"
+							class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.FILE_TREE ? 'is-active' : ''}"
+							aria-label="${this.shouldDisableNavButton() ? "Complete setup first" : "File tree"}"
+							@click="${() => this.switchView(ScrybbleViewType.FILE_TREE)}">
+						<span>${getIcon("folder")}</span>
+						<span>Files</span>
+					</button>
+					<button style="display: flex; flex-direction: column"
+							?disabled="${this.shouldDisableNavButton()}"
+							class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SYNC_HISTORY ? 'is-active' : ''}"
+							aria-label="${this.shouldDisableNavButton() ? "Complete setup first" : "Sync history"}"
+							@click="${() => this.switchView(ScrybbleViewType.SYNC_HISTORY)}">
+						<span>${getIcon("file-stack")}</span>
+						<span>Sync history</span>
+					</button>
+					<button style="display: flex; flex-direction: column"
+							?disabled="${this.shouldDisableNavButton()}"
+							class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SUPPORT ? 'is-active' : ''}"
+							aria-label="Support"
+							@click="${() => this.switchView(ScrybbleViewType.SUPPORT)}">
+						<span>${getIcon("badge-help")}</span>
+						<span>Support</span>
+					</button>
+					<button style="display: flex; flex-direction: column"
+							?disabled="${this.shouldDisableNavButton()}"
 							class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.ACCOUNT ? 'is-active' : ''}"
 							aria-label="Account"
 							@click="${() => this.switchView(ScrybbleViewType.ACCOUNT)}">
 						<span>${getIcon("user")}</span>
 						<span>Account</span>
 					</button>
-                </div>
-            </div>
-        `;
+				</div>
+			</div>
+		`;
 	}
-
 	private renderCurrentView(): TemplateResult | typeof nothing {
 		const { currentView } = this;
 
@@ -151,7 +146,11 @@ export class ScrybbleUI extends LitElement {
 			case ScrybbleViewType.SUPPORT:
 				return html`<scrybble-support/>`;
 			case ScrybbleViewType.ACCOUNT:
-				return html`<scrybble-account/>`
+				return html`<scrybble-account/>`;
+			case ScrybbleViewType.ONBOARDING:
+				return html`<scrybble-onboarding 
+					.onboardingReady="${this.requestUpdate.bind(this)}"
+				/>`;
 			default:
 				return nothing;
 		}
@@ -160,6 +159,4 @@ export class ScrybbleUI extends LitElement {
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
 		return this
 	}
-
-
 }

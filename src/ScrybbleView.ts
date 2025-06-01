@@ -1,7 +1,7 @@
 import {apiVersion, ItemView, Platform, WorkspaceLeaf} from "obsidian";
 import Scrybble from "../main";
 import {html, render} from "lit-html";
-import {ScrybbleViewType} from "./ui/Components/ScrybbleUI";
+import {ScrybbleViewType} from "./ui/Pages/ScrybbleUI";
 import {ObsidianFileNavigator} from "./FileNavigator";
 import {ScrybbleCommon} from "../@types/scrybble";
 import {Authentication} from "./Authentication";

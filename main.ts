@@ -1,11 +1,11 @@
 import {Plugin, requestUrl, WorkspaceLeaf} from 'obsidian';
 import {
+	AuthenticateWithGumroadLicenseResponse,
 	DeviceCodeResponse,
-	DeviceTokenResponse,
+	DeviceTokenResponse, OnboardingState, OneTimeCodeResponse,
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
-	ScrybbleCommon,
 	ScrybblePersistentStorage,
 	ScrybbleSettings,
 	ScrybbleUser,
@@ -14,12 +14,11 @@ import {
 } from "./@types/scrybble";
 import {Settings} from "./src/settings";
 import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
-import loadLitComponents from "./src/ui/Components/loadComponents";
+import loadLitComponents from "./src/ui/loadComponents";
 import {SyncQueue} from "./src/SyncQueue";
-import {pino} from "./src/errorHandling/logging";
 import {Authentication} from "./src/Authentication";
 import {SettingsImpl} from "./src/SettingsImpl";
-import {ResponseError} from "./src/errorHandling/Errors";
+import {pino} from "./src/errorHandling/logging";
 
 // only needs to happen once, ever.
 loadLitComponents()
@@ -44,10 +43,6 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			await this.saveData(this.settings);
 		});
 		this.authentication = new Authentication(this.settings, this);
-		//
-		// this.registerObsidianProtocolHandler(`scrybble-oauth`, async (data) => {
-		// 	await this.authentication.onOAuthCallbackReceived(data as {code: string, state: string});
-		// });
 
 		this.syncQueue = new SyncQueue(
 			this.settings,
@@ -203,7 +198,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			}
 		});
 
-		return {...response.json, loaded: true};
+		return {...response.json};
 	}
 
 	public async fetchOAuthAccessToken(code: string, codeVerifier: string) {
@@ -298,6 +293,30 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			},
 			body: formData.toString()
 		})
+
+		return response.json;
+	}
+
+	async sendGumroadLicense(license: string): Promise<AuthenticateWithGumroadLicenseResponse> {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/gumroadLicense`, {
+			method: "POST",
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ license })
+		});
+
+		return response.json;
+	}
+
+	async sendOneTimeCode(code: string): Promise<OneTimeCodeResponse> {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/onetimecode`, {
+			method: "POST",
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ code })
+		});
 
 		return response.json;
 	}

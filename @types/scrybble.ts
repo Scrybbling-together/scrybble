@@ -56,6 +56,20 @@ export interface PaginatedResponse<T> {
 	total: number;
 }
 
+export type OnboardingState = "unauthenticated"
+	| "setup-gumroad"
+	| "setup-one-time-code"
+	| "setup-one-time-code-again"
+	| "ready";
+
+export type AuthenticateWithGumroadLicenseResponse =
+	| { newState: OnboardingState }
+	| { error: string };
+
+export type OneTimeCodeResponse =
+	| { newState: OnboardingState }
+	| { error: string };
+
 export interface ScrybbleApi {
 	fetchSyncDelta(): Promise<ReadonlyArray<SyncDelta>>;
 
@@ -67,7 +81,7 @@ export interface ScrybbleApi {
 
 	fetchRequestFileToBeSynced(filePath: string): Promise<{ sync_id: number; filename: string; }>;
 
-	fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready">;
+	fetchOnboardingState(): Promise<OnboardingState>;
 
 	fetchGetUser(): Promise<ScrybbleUser>;
 
@@ -78,7 +92,9 @@ export interface ScrybbleApi {
 	fetchPollForDeviceToken(deviceCode: string): Promise<DeviceTokenResponse>;
 
 	fetchDeviceCode(): Promise<DeviceCodeResponse>;
-}
+
+	sendGumroadLicense(license: string): Promise<AuthenticateWithGumroadLicenseResponse>;
+	sendOneTimeCode(code: string): Promise<OneTimeCodeResponse>;}
 
 export interface ScrybblePersistentStorage {
 	access_token: string | null;
@@ -140,16 +156,14 @@ export interface GumroadLicenseResponse {
 
 
 export type ScrybbleUser = {
-	loaded: false;
-} | {
-	loaded: true;
 	user: {
 		created_at: string;
 		email: string;
 		name: string;
 		id: number;
 	},
-	subscription_status: GumroadLicenseResponse;
+	onboarding_state: OnboardingState;
+	subscription_status: GumroadLicenseResponse | null;
 	total_syncs: number;
 }
 

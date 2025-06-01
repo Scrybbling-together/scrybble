@@ -100,7 +100,7 @@ export class AccountPage extends LitElement {
 			this.error = null;
 			await this.scrybble.authentication.initiateDeviceFlow();
 		} catch (error) {
-			// this.error = Errors.handle("DEVICE_AUTH_INITIATION_ERROR", error as Error);
+			this.error = Errors.handle("DEVICE_AUTH_INITIATION_ERROR", error as Error);
 		}
 	}
 
@@ -260,42 +260,6 @@ export class AccountPage extends LitElement {
         </div>
     `;
 	}
-	private renderPollingView(): TemplateResult {
-		const deviceAuth = this.scrybble.authentication.deviceAuth;
-
-		return html`
-			<div class="account-card">
-				<div class="polling-container">
-					<div class="spinner">
-						${getIcon("loader-2")}
-					</div>
-					<h3>Waiting for authorization</h3>
-					<p>Please complete the authorization process in your browser.</p>
-					
-					${deviceAuth ? html`
-						<div class="polling-reminder">
-							<p>If you haven't already, please:</p>
-							<ol>
-								<li>Go to <strong>${deviceAuth.verification_uri}</strong></li>
-								<li>Enter code: <strong>${deviceAuth.user_code}</strong></li>
-								<li>Authorize the application</li>
-							</ol>
-						</div>
-					` : nothing}
-
-					<div class="polling-actions">
-						<button 
-							class="secondary-button" 
-							@click="${this.cancelDeviceFlow}">
-							Cancel
-						</button>
-					</div>
-
-					<p class="polling-hint">This window will update automatically once authorization is complete.</p>
-				</div>
-			</div>
-		`;
-	}
 
 	private renderLoginView(): TemplateResult {
 		return html`
@@ -312,21 +276,9 @@ export class AccountPage extends LitElement {
 					<button
 						class="primary-button"
 						@click="${this.startDeviceFlow}">
-						<div class="button-icon">
-							${getIcon("log-in")}
-						</div>
+						${getIcon("log-in")}
 						<span>Sign in with Scrybble</span>
 					</button>
-				</div>
-
-				<div class="account-help">
-					<h3>How it works:</h3>
-					<ol>
-						<li>Click "Sign in with Scrybble" above</li>
-						<li>A browser window will open with an authorization page</li>
-						<li>Enter the verification code shown in Obsidian</li>
-						<li>Return to Obsidian - you'll be automatically signed in!</li>
-					</ol>
 				</div>
 			</div>
 		`;
@@ -334,8 +286,8 @@ export class AccountPage extends LitElement {
 
 	private formatGumroadSubscriptionManageUrl(): string {
 		const user = this.scrybble.authentication.user;
-		if (!user.loaded) return "";
-		if (!user.subscription_status.licenseInformation?.subscription_id) {
+		if (!user) return "";
+		if (!user.subscription_status?.licenseInformation?.subscription_id) {
 			pino.warn("Missing subscription ID for Gumroad URL");
 			return "#";
 		}
@@ -344,7 +296,7 @@ export class AccountPage extends LitElement {
 
 	private renderAuthenticatedView(): TemplateResult {
 		const userInfo = this.scrybble.authentication.user;
-		if (!userInfo.loaded) {
+		if (!userInfo) {
 			return this.renderLoadingView("Loading user information...");
 		}
 
@@ -384,21 +336,29 @@ export class AccountPage extends LitElement {
 							</div>
 							<div class="info-value">${this.formatDate(userInfo.user.created_at)}</div>
 						</div>
+						
+						<div class="info-item">
+							<div class="info-label">
+								${getIcon("bird")}
+								<span>Onboarding status</span>
+							</div>
+							<div class="info-value">${userInfo.onboarding_state}</div>
+						</div>
 
 						<div class="info-item">
 							<div class="info-label">
 								${getIcon("crown")}
 								<span>Subscription 
-									${userInfo.subscription_status.exists ?
+									${userInfo.subscription_status?.exists ?
 										html`<a href="${this.formatGumroadSubscriptionManageUrl()}" target="_blank">Manage</a>` :
 										nothing}
 								</span>
 							</div>
-							${userInfo.subscription_status.lifetime ?
+							${userInfo.subscription_status?.lifetime ?
 								html`<div class="info-value subscription-status-lifetime">Lifetime license!</div>` :
 								html`<div
-									class="info-value ${userInfo.subscription_status.exists ? "subscription-status-active" : "subscription-status-inactive"}">
-									${userInfo.subscription_status.exists ? html`Active` : html`No active license`}
+									class="info-value ${userInfo.subscription_status?.exists ? "subscription-status-active" : "subscription-status-inactive"}">
+									${userInfo.subscription_status?.exists ? html`Active` : html`No active license`}
 								</div>`
 							}
 						</div>
