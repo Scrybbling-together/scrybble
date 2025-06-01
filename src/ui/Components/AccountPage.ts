@@ -98,9 +98,9 @@ export class AccountPage extends LitElement {
 
 		try {
 			this.error = null;
-			await this.scrybble.authentication.initiateDeviceFlow(this.scrybble.settings);
+			await this.scrybble.authentication.initiateDeviceFlow();
 		} catch (error) {
-			this.error = Errors.handle("DEVICE_AUTH_INITIATION_ERROR", error as Error);
+			// this.error = Errors.handle("DEVICE_AUTH_INITIATION_ERROR", error as Error);
 		}
 	}
 

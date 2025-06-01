@@ -1,32 +1,24 @@
-import {DeviceTokenResponse, ScrybbleApi, ScrybbleSettings, ScrybbleUser} from "../@types/scrybble";
+import {
+	DeviceFlowError,
+	DeviceTokenErrorResponse,
+	DeviceTokenResponse, DeviceTokenSuccessResponse,
+	ScrybbleApi,
+	ScrybbleSettings,
+	ScrybbleUser
+} from "../@types/scrybble";
 import {pino} from "./errorHandling/logging";
 import {ResponseError} from "./errorHandling/Errors";
 import {StateMachine, t} from "typescript-fsm";
 
-export type DeviceFlowError =
-	| 'authorization_pending'
-	| 'slow_down'
-	| 'access_denied'
-	| 'expired_token';
 
-export interface DeviceFlowErrorResponse {
-	data?: {
-		error?: DeviceFlowError;
-		error_description?: string;
-	};
-}
-
-
-export function isDeviceFlowError(response: any): response is DeviceFlowErrorResponse {
+export function isDeviceFlowError(response: any): response is DeviceTokenErrorResponse {
 	return response && typeof response === 'object' && "error" in response;
 }
 
 
-export function getDeviceFlowResponseType(response: any): DeviceFlowError | "success" | null {
+export function getDeviceTokenErrorResponseType(response: DeviceTokenResponse): DeviceFlowError | null {
 	if (isDeviceFlowError(response)) {
 		return response.error;
-	} else if ("access_token" in response) {
-		return "success";
 	}
 	return null;
 }
@@ -76,6 +68,10 @@ export interface DeviceAuthorizationData {
 	verification_uri: string;
 	expires_in: number;
 	interval: number;
+}
+
+function isSuccessResponse(deviceTokenResponse: DeviceTokenResponse): deviceTokenResponse is DeviceTokenSuccessResponse {
+	return "access_token" in deviceTokenResponse;
 }
 
 export class Authentication extends StateMachine<AuthStates, AuthEvents> {
@@ -209,23 +205,22 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			}
 
 			try {
-				const tokenData = await this.api.fetchPollForDeviceToken(this.deviceAuth!.device_code);
-				const responseType = getDeviceFlowResponseType(tokenData);
-				console.log("responseType", responseType);
+				const deviceTokenResponse = await this.api.fetchPollForDeviceToken(this.deviceAuth!.device_code);
 
-				switch (responseType) {
-					case 'success':
-						this.stopPolling();
-						this.deviceAuth = null;
+				if (isSuccessResponse(deviceTokenResponse)) {
+					this.stopPolling();
+					this.deviceAuth = null;
 
-						this.settings.access_token = tokenData.access_token;
-						this.settings.refresh_token = tokenData.refresh_token;
-						await this.settings.save();
+					this.settings.access_token = deviceTokenResponse.access_token;
+					this.settings.refresh_token = deviceTokenResponse.refresh_token;
+					await this.settings.save();
 
-						await this.dispatch(AuthEvents.ACCESS_TOKEN_RECEIVED);
-						await this.fetchAndSetUser();
-						break;
+					await this.dispatch(AuthEvents.ACCESS_TOKEN_RECEIVED);
+					await this.fetchAndSetUser();
+					return;
+				}
 
+				switch (getDeviceTokenErrorResponseType(deviceTokenResponse)) {
 					case 'authorization_pending':
 						// User hasn't authorized yet, continue polling
 						this.scheduleNextPoll(currentInterval, poll);
@@ -255,17 +250,14 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 
 					default:
 						// Other error
-						pino.error(tokenData, "Unexpected error during device polling");
+						pino.error(deviceTokenResponse, "Unexpected error during device polling");
 						this.stopPolling();
 						this.deviceAuth = null;
 						await this.dispatch(AuthEvents.AUTHORIZATION_DENIED);
 						break;
 				}
-
-
-
 			} catch (error) {
-
+				pino.error(error, "Failed to poll for device token");
 			}
 		};
 
@@ -358,7 +350,6 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 				await this.refreshAccessToken();
 				await this.fetchAndSetUser(false);
 			} catch (refreshError) {
-				console.log("refresh error", refreshError)
 				throw error;
 			}
 		} else {

@@ -6,6 +6,7 @@ import {scrybbleContext} from "../scrybbleContext";
 import {provide} from "@lit/context";
 import {LitElement} from "lit-element";
 import {property, state} from "lit-element/decorators.js";
+import {AuthStates} from "../../Authentication";
 
 export enum ScrybbleViewType {
 	FILE_TREE = "file_tree",
@@ -37,11 +38,18 @@ export class ScrybbleUI extends LitElement {
 	private async initialize() {
 		this.isLoading = true;
 
+		this.scrybble.authentication.addStateChangeListener((state) => {
+			if (state === AuthStates.AUTHENTICATED) {
+				this.requestUpdate();
+			}
+		});
+
 		if (!this.scrybble.settings.access_token) {
 			this.currentView = ScrybbleViewType.ACCOUNT
 			this.isLoading = false;
 			return;
 		}
+
 
 		try {
 			const state = await this.scrybble.api.fetchOnboardingState();
@@ -100,7 +108,7 @@ export class ScrybbleUI extends LitElement {
                     <button style="display: flex; flex-direction: column"
 						?disabled="${!this.scrybble.authentication.user.loaded}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.FILE_TREE ? 'is-active' : ''}"
-                        aria-label="File tree"
+                        aria-label="${this.scrybble.authentication.user.loaded ? "File tree" : "Please log in first"}"
                         @click="${() => this.switchView(ScrybbleViewType.FILE_TREE)}">
                         <span>${getIcon("folder")}</span>
                         <span>Files</span>
@@ -108,7 +116,7 @@ export class ScrybbleUI extends LitElement {
                     <button style="display: flex; flex-direction: column"
 						?disabled="${!this.scrybble.authentication.user.loaded}"
                         class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SYNC_HISTORY ? 'is-active' : ''}"
-                        aria-label="Sync history"
+							aria-label="${this.scrybble.authentication.user.loaded ? "Sync history" : "Please log in first"}"
                         @click="${() => this.switchView(ScrybbleViewType.SYNC_HISTORY)}">
                         <span>${getIcon("file-stack")}</span>
                         <span>Sync history</span>

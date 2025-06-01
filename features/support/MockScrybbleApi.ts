@@ -1,4 +1,5 @@
 import {
+	DeviceCodeResponse, DeviceFlowError, DeviceTokenResponse,
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
@@ -14,6 +15,8 @@ export class MockScrybbleApi implements ScrybbleApi {
 
 	private errors: Record<string, number> = {};
 	private serverReachable: boolean = true;
+
+	private pollingState: DeviceFlowError | "authenticated" = "authorization_pending";
 
 	constructor(private settings: ScrybbleSettings) {
 	}
@@ -158,5 +161,37 @@ export class MockScrybbleApi implements ScrybbleApi {
 		this.accessTokenExpired = false;
 		this.loggedIn = true;
 		return Promise.resolve({access_token: "new_test_access_token", refresh_token: "new_test_refresh_token"});
+	}
+
+	async fetchDeviceCode(): Promise<DeviceCodeResponse> {
+		this.throwIfErrorIsConfigured("fetchDeviceCode");
+		return {
+			device_code: "test_device_code",
+			user_code: "test_user_code",
+			expires_in: 60 * 10,
+			interval: 1,
+			verification_uri: "test_verification_uri"
+		}
+	}
+
+	async fetchPollForDeviceToken(deviceCode: string): Promise<DeviceTokenResponse> {
+		this.throwIfErrorIsConfigured("fetchPollForDeviceToken");
+		if (this.pollingState !== "authenticated") {
+			return {
+				error: this.pollingState,
+				error_description: this.pollingState
+			};
+		} else {
+			return {
+				access_token: "test_access_token",
+				refresh_token: "test_refresh_token",
+				expires_in: 1000,
+				token_type: "bearer"
+			};
+		}
+	}
+
+	authorizeDeviceToken() {
+		this.pollingState = "authenticated";
 	}
 }

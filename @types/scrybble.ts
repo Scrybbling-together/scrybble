@@ -18,6 +18,7 @@ export interface ScrybbleSettings {
 	refresh_token?: string;
 
 	get endpoint(): string;
+
 	save(): Promise<void>;
 }
 
@@ -160,9 +161,21 @@ export interface DeviceCodeResponse {
 	interval: number;
 }
 
-export interface DeviceTokenResponse {
+export type DeviceFlowError =
+	| 'authorization_pending'
+	| 'slow_down'
+	| 'access_denied'
+	| 'expired_token';
+
+export interface DeviceTokenErrorResponse {
+	error: DeviceFlowError;
+	error_description: string;
+}
+
+export type DeviceTokenSuccessResponse = {
 	access_token: string;
 	refresh_token: string;
 	token_type: string;
 	expires_in: number;
-}
+};
+export type DeviceTokenResponse = DeviceTokenSuccessResponse  | DeviceTokenErrorResponse;

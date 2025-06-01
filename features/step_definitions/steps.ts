@@ -33,7 +33,8 @@ When("The user clicks on the {string} button", async function (this: ObsidianWor
 	await new Promise(resolve => setTimeout(resolve, 250));
 });
 
-Then("The interface should say {string}", function (text) {
+Then("The interface should say {string}", async function (text) {
+	await new Promise(resolve => setTimeout(resolve, 100));
 	expect(this.container.innerText, this.container.innerText).to.include(text);
 });
 When("The plugin initializes", async function (this: ObsidianWorld) {

@@ -12,9 +12,10 @@ export class ObsidianWorld extends World {
 	public authentication: Authentication;
 
 	public spies: {
-		initiateOAuthFlow: SinonSpy;
+		initiateDeviceFlow: SinonSpy;
 		refreshAccessToken: SinonSpy;
 		fetchGetUser: SinonSpy;
+		pollForDeviceToken: SinonSpy;
 		windowOpen: SinonSpy;
 	};
 
@@ -56,7 +57,8 @@ export class ObsidianWorld extends World {
 		};
 
 		this.spies = {
-			initiateOAuthFlow: sinon.spy(this.authentication, 'initiateOAuthFlow'),
+			initiateDeviceFlow: sinon.spy(this.authentication, 'initiateDeviceFlow'),
+			pollForDeviceToken: sinon.spy(this.api, 'fetchPollForDeviceToken'),
 			fetchGetUser: sinon.spy(this.api, 'fetchGetUser'),
 			refreshAccessToken: sinon.spy(this.api, 'fetchRefreshOAuthAccessToken'),
 			windowOpen: sinon.spy(window, 'open')
