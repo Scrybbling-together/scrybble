@@ -1,13 +1,18 @@
 import {
 	AuthenticateWithGumroadLicenseResponse,
-	DeviceCodeResponse, DeviceFlowError, DeviceTokenResponse, OneTimeCodeResponse,
+	DeviceCodeResponse,
+	DeviceFlowError,
+	DeviceTokenResponse,
+	FeedbackFormDetails,
+	FeedbackResponse,
+	OneTimeCodeResponse,
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
 	ScrybbleSettings,
 	ScrybbleUser,
 	SyncDelta,
-	SyncItem
+	SyncFile
 } from "../../@types/scrybble";
 import {t} from "typescript-fsm";
 
@@ -69,9 +74,9 @@ export class MockScrybbleApi implements ScrybbleApi {
 		return Promise.resolve("ready");
 	}
 
-	fetchPaginatedSyncHistory(page: number): Promise<PaginatedResponse<SyncItem>> {
+	fetchPaginatedSyncHistory(page: number): Promise<PaginatedResponse<SyncFile>> {
 		this.throwIfErrorIsConfigured("fetchPaginatedSyncHistory");
-		const t: PaginatedResponse<SyncItem> = {
+		const t: PaginatedResponse<SyncFile> = {
 			data: [],
 			current_page: 0,
 			last_page: 0,
@@ -207,5 +212,9 @@ export class MockScrybbleApi implements ScrybbleApi {
 		return {
 			newState: "ready"
 		};
+	}
+
+	fetchGiveFeedback(details: FeedbackFormDetails): Promise<void> {
+		return Promise.resolve();
 	}
 }

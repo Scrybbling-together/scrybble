@@ -1,8 +1,8 @@
-import {Plugin, requestUrl, WorkspaceLeaf} from 'obsidian';
+import {Plugin, requestUrl, RequestUrlResponse, WorkspaceLeaf} from 'obsidian';
 import {
 	AuthenticateWithGumroadLicenseResponse,
 	DeviceCodeResponse,
-	DeviceTokenResponse, OnboardingState, OneTimeCodeResponse,
+	DeviceTokenResponse, FeedbackFormDetails, OnboardingState, OneTimeCodeResponse,
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
@@ -10,7 +10,7 @@ import {
 	ScrybbleSettings,
 	ScrybbleUser,
 	SyncDelta,
-	SyncItem
+	SyncFile
 } from "./@types/scrybble";
 import {Settings} from "./src/settings";
 import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
@@ -127,7 +127,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return response.json
 	}
 
-	async fetchPaginatedSyncHistory(page: number = 1): Promise<PaginatedResponse<SyncItem>> {
+	async fetchPaginatedSyncHistory(page: number = 1): Promise<PaginatedResponse<SyncFile>> {
 		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/inspect-sync?paginated=true&page=${page}`, {
 			method: "GET",
 			headers: {
@@ -319,6 +319,16 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		});
 
 		return response.json;
+	}
+
+	async fetchGiveFeedback(details: FeedbackFormDetails): Promise<void> {
+		this.authenticatedRequest(`${this.settings.endpoint}/api/sync/remarkable-document-share`, {
+			method: "POST",
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(details)
+		});
 	}
 }
 

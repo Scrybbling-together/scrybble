@@ -5,7 +5,7 @@ import {property} from "lit-element/decorators.js";
 import {sanitizeFilename} from "../../support";
 import {consume} from "@lit/context";
 import {scrybbleContext} from "../scrybbleContext";
-import {ScrybbleCommon} from "../../../@types/scrybble";
+import {ScrybbleCommon, SyncFile} from "../../../@types/scrybble";
 
 export class RmFile extends LitElement {
 	@consume({context: scrybbleContext})
@@ -13,18 +13,29 @@ export class RmFile extends LitElement {
 	scrybble!: ScrybbleCommon;
 
 	@property({type: Object})
-	file!: object;
+	file!: SyncFile;
 
 
 	render() {
 		const sync = this.file.sync;
 
-		const {pdf,md} = this.findFile();
+		let syncState: "file-check-2" | "file-clock" | "file" | "file-x-2";
+		if (sync?.error) {
+			syncState = "file-x-2";
+		} else if (sync?.completed) {
+			syncState = "file-check-2";
+		} else if (sync != null && !sync?.error && !sync?.completed) {
+			syncState = "file-clock";
+		} else {
+			syncState = "file";
+		}
+
+		const {pdf, md} = this.findFile();
 
 		return html`
 			<div class="tree-item" @click="${this._handleClick}" aria-label="Download file to your vault">
 				<div class="tree-item-self rm-file is-clickable">
-					<span class="tree-item-icon">${getIcon('file')}</span>
+					<span class="tree-item-icon">${getIcon(syncState)}</span>
 					<span class="filename">${this.file.name}</span>
 				</div>
 			</div>
@@ -33,7 +44,7 @@ export class RmFile extends LitElement {
 					<span class="when">${sync ? sync.created_at : "Not synced yet"}</span>
 					<span class="file-links">
 						${sync ? html`
-							<a class="feedback">feedback</a>
+							<a class="feedback" @click="${this.openFeedbackDialog.bind(this)}">feedback</a>
 							<span class="vertical-separator"></span>
 							<span class="pill pdf ${pdf ? "available" : "unavailable"}"
 								  @click="${this.clickPdf.bind(this)}">PDF</span>
@@ -48,6 +59,13 @@ export class RmFile extends LitElement {
 
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
 		return this
+	}
+
+	private openFeedbackDialog(_e) {
+		this.scrybble.openFeedbackDialog(this.file,
+			async (details) => {
+				await this.scrybble.api.fetchGiveFeedback(details);
+			});
 	}
 
 	private clickMd(e) {

@@ -53,7 +53,8 @@ export class ObsidianWorld extends World {
 				scrybbleVersion: "dev",
 				obsidianVersion: "unknown",
 				platformInfo: "development"
-			}
+			},
+			openFeedbackDialog: (syncFile, onSubmit) => {}
 		};
 
 		this.spies = {

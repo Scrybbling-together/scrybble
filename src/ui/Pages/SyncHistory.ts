@@ -2,7 +2,7 @@ import {html, LitElement, nothing} from 'lit-element';
 import {property, state} from 'lit-element/decorators.js';
 import {ErrorMessage, Errors} from "../../errorHandling/Errors";
 import {getIcon} from "obsidian";
-import {ScrybbleCommon, SyncItem} from "../../../@types/scrybble";
+import {ScrybbleCommon, SyncFile} from "../../../@types/scrybble";
 import {consume} from "@lit/context";
 import {scrybbleContext} from "../scrybbleContext";
 
@@ -12,7 +12,7 @@ export class ScrybbleSyncHistoryComponent extends LitElement {
 	scrybble!: ScrybbleCommon;
 
 	@state()
-	private syncItems: SyncItem[] = [];
+	private syncItems: SyncFile[] = [];
 	@state()
 	private currentPage: number = 1;
 	@state()

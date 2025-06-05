@@ -1,5 +1,7 @@
 import {ISyncQueue} from "../src/SyncQueue";
 import {Authentication} from "../src/Authentication";
+import {App} from "obsidian";
+import {FileSyncFeedbackModal} from "../src/ui/Components/FileSyncFeedbackModal";
 
 export interface Host {
 	endpoint: string;
@@ -40,12 +42,18 @@ export interface Directory extends RMTreeItem {
 
 export type RMFileTree = { items: ReadonlyArray<RMTreeItem>, cwd: string };
 
-export interface SyncItem {
+export interface SyncInfo {
 	id: number;
-	filename: string;
-	created_at: string;
 	completed: boolean;
 	error: boolean;
+	created_at: string;
+}
+
+export interface SyncFile {
+	name: string;
+	path: string;
+	sync: null | SyncInfo;
+	type: "f" | "d";
 }
 
 export interface PaginatedResponse<T> {
@@ -70,10 +78,18 @@ export type OneTimeCodeResponse =
 	| { newState: OnboardingState }
 	| { error: string };
 
+
+export interface FeedbackFormDetails {
+	developer_access_consent_granted: boolean;
+	open_access_consent_granted: boolean;
+	sync_id: number;
+	feedback?: string;
+}
+
 export interface ScrybbleApi {
 	fetchSyncDelta(): Promise<ReadonlyArray<SyncDelta>>;
 
-	fetchPaginatedSyncHistory(page: number): Promise<PaginatedResponse<SyncItem>>;
+	fetchPaginatedSyncHistory(page: number): Promise<PaginatedResponse<SyncFile>>;
 
 	fetchFileTree(path: string): Promise<RMFileTree>;
 
@@ -94,7 +110,10 @@ export interface ScrybbleApi {
 	fetchDeviceCode(): Promise<DeviceCodeResponse>;
 
 	sendGumroadLicense(license: string): Promise<AuthenticateWithGumroadLicenseResponse>;
-	sendOneTimeCode(code: string): Promise<OneTimeCodeResponse>;}
+	sendOneTimeCode(code: string): Promise<OneTimeCodeResponse>;
+
+	fetchGiveFeedback(details: FeedbackFormDetails): Promise<void>;
+}
 
 export interface ScrybblePersistentStorage {
 	access_token: string | null;
@@ -135,6 +154,7 @@ export type ScrybbleCommon = {
 		obsidianVersion: string;
 		platformInfo: string;
 	};
+	openFeedbackDialog: (syncFile: SyncFile, onSubmit: (details: FeedbackFormDetails) => Promise<void>) => void;
 }
 
 export interface LicenseInformation {
