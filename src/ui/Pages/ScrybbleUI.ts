@@ -1,7 +1,7 @@
 import {html, nothing, TemplateResult} from "lit-html";
 import {ErrorMessage} from "../../errorHandling/Errors";
 import {getIcon} from "obsidian";
-import { ScrybbleCommon} from "../../../@types/scrybble";
+import {ScrybbleCommon} from "../../../@types/scrybble";
 import {scrybbleContext} from "../scrybbleContext";
 import {provide} from "@lit/context";
 import {LitElement} from "lit-element";
@@ -108,15 +108,6 @@ export class ScrybbleUI extends LitElement {
 						<span>Files</span>
 					</button>
 					<button style="display: flex; flex-direction: column"
-							?disabled="${this.shouldDisableNavButton()}"
-							class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SYNC_HISTORY ? 'is-active' : ''}"
-							aria-label="${this.shouldDisableNavButton() ? "Complete setup first" : "Sync history"}"
-							@click="${() => this.switchView(ScrybbleViewType.SYNC_HISTORY)}">
-						<span>${getIcon("file-stack")}</span>
-						<span>Sync history</span>
-					</button>
-					<button style="display: flex; flex-direction: column"
-							?disabled="${this.shouldDisableNavButton()}"
 							class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.SUPPORT ? 'is-active' : ''}"
 							aria-label="Support"
 							@click="${() => this.switchView(ScrybbleViewType.SUPPORT)}">
@@ -124,7 +115,6 @@ export class ScrybbleUI extends LitElement {
 						<span>Support</span>
 					</button>
 					<button style="display: flex; flex-direction: column"
-							?disabled="${this.shouldDisableNavButton()}"
 							class="clickable-icon nav-action-button ${currentView === ScrybbleViewType.ACCOUNT ? 'is-active' : ''}"
 							aria-label="Account"
 							@click="${() => this.switchView(ScrybbleViewType.ACCOUNT)}">
@@ -141,8 +131,6 @@ export class ScrybbleUI extends LitElement {
 		switch (currentView) {
 			case ScrybbleViewType.FILE_TREE:
 				return html`<scrybble-file-tree/>`;
-			case ScrybbleViewType.SYNC_HISTORY:
-				return html`<scrybble-sync-history/>`;
 			case ScrybbleViewType.SUPPORT:
 				return html`<scrybble-support/>`;
 			case ScrybbleViewType.ACCOUNT:

@@ -27,7 +27,6 @@ scrybble-ui {
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-4-2);
-	padding: 0 var(--size-4-4);
 
 	& .svg-icon {
 		color: var(--text-muted);
@@ -38,12 +37,145 @@ scrybble-ui {
 	}
 }
 
-scrybble-file-tree, support-page {
+scrybble-filetree, support-page {
 	min-height: 0;
 }
 
+scrybble-file-tree {
+	& .svg-icon {
+		--icon-size: var(--icon-xs);
+		--icon-stroke: var(--icon-s-stroke-width);
+	}
+
+	.rm-file {
+		display: grid;
+		grid-template-columns: min-content 1fr auto;
+
+		& .filename {
+			overflow: hidden;
+			text-wrap: nowrap;
+			text-overflow: ellipsis;
+		}
+
+
+		& .tree-item-icon {
+			position: initial;
+		}
+
+		&:before {
+			content: none;
+		}
+	}
+
+	& .additional {
+		display: grid;
+		grid-template-columns: max-content auto;
+		margin-top: -8px;
+		gap: 8px;
+		font-size: 0.8em;
+		justify-content: space-between;
+
+		& .sync-status {
+			align-self: center;
+		}
+
+		& .file-links {
+			display: flex;
+			align-items: center;
+			gap: var(--size-4-1);
+
+			a {
+				color: var(--text-muted);
+			}
+
+			& span.vertical-separator {
+				display: inline-block;
+				height: calc(1em + 2 * var(--size-4-1));
+				border-right: 1px solid #ddd;
+			}
+
+			& .pill {
+				--color-mix: 70%;
+				font-size: 0.75em;
+				border-radius: var(--button-radius);
+				padding: var(--size-4-1);
+				transition: all 120ms ease-in;
+
+				&:hover {
+					--color-mix: 80%;
+				}
+
+				&.available {
+					background-color: color-mix(in oklab, var(--color) var(--color-mix), white calc(100% - var(--color-mix)));
+					color: color-mix(in oklab, var(--color) var(--color-mix), black calc(100% - var(--color-mix)));
+					&:hover {
+						cursor: pointer;
+					}
+				}
+
+				&.unavailable {
+					background-color: unset !important;
+					color: var(--text-muted) !important;
+					border: 1px solid color-mix(in oklab, var(--text-muted) 15%, white 85%) !important;
+				}
+
+				&.pdf {
+					--color: var(--color-red);
+				}
+
+				&.md {
+					--color: var(--color-blue);
+				}
+			}
+		}
+
+
+		&:before {
+			content: none;
+		}
+	}
+
+	/*& .rm-file {*/
+	/*	display: grid;*/
+	/*	grid-template-columns: 16px 1fr [icon] 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;*/
+	/*	grid-template-rows: 1fr 1fr;*/
+	/*	grid-template-areas:*/
+	/*"status filename filename filename filename filename filename filename filename filename actions actions"*/
+	/*"status info info info info info info info info info info info";*/
+	/*	gap: 8px;*/
+
+	/*	& .status {*/
+	/*		grid-area: status;*/
+	/*	}*/
+
+	/*	& .icon {*/
+	/*		grid-area: icon;*/
+	/*	}*/
+
+	/*	& .actions {*/
+	/*		grid-area: actions;*/
+	/*	}*/
+
+	/*	& .filename {*/
+	/*		grid-area: filename;*/
+	/*		overflow: hidden;*/
+	/*		white-space: nowrap;*/
+	/*		text-overflow: ellipsis;*/
+	/*	}*/
+
+	/*	& .info {*/
+	/*		grid-area: info;*/
+	/*		display: flex;*/
+	/*		justify-content: space-between;*/
+
+
+	/*	}*/
+	/*}*/
+}
+
+
 rm-tree {
-	overflow-y: scroll;
+	padding: 0;
 }
 
 .scrybble-container {
@@ -130,18 +262,22 @@ rm-tree {
 	&:hover {
 		opacity: 0.8;
 	}
+
 	&.completed {
 		background-color: rgba(var(--color-green-rgb), 0.2);
 		color: var(--color-green);
 	}
+
 	&.error {
 		background-color: rgba(var(--color-red-rgb), 0.2);
 		color: var(--color-red);
 	}
+
 	&.progress {
 		background-color: rgba(var(--color-orange-rgb), 0.2);
 		color: var(--color-orange);
 	}
+
 	& span {
 		opacity: 0.9;
 		display: flex;
@@ -459,6 +595,7 @@ rm-tree {
 span.menu-item-icon {
 	display: inline-block;
 }
+
 /* Device Authorization Styles - Obsidian Native */
 .device-auth-header {
 	text-align: left;
@@ -779,7 +916,9 @@ span.menu-item-icon {
 	.copy-code-button {
 		align-self: flex-start;
 	}
-}}
+}
+
+}
 
 .account-container {
 	display: flex;
@@ -1119,8 +1258,12 @@ span.menu-item-icon {
 }
 
 @keyframes spin {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 /* Responsive adjustments */

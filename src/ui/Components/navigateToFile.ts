@@ -60,24 +60,7 @@ export class NavigateToFile extends LitElement {
 				disabled: true
 			},
 			{ isSeparator: true },
-			{
-				title: "Open PDF in new tab",
-				icon: "file-plus",
-				disabled: pdf == null,
-				onClick: () => fileNavigator.openInNewTab(pdfPath)
-			},
-			{
-				title: "Open PDF in vertical split view",
-				icon: "separator-vertical",
-				disabled: pdf == null,
-				onClick: () => fileNavigator.openInVerticalSplit(pdfPath)
-			},
-			{
-				title: "Open PDF in horizontal split view",
-				icon: "separator-horizontal",
-				disabled: pdf == null,
-				onClick: () => fileNavigator.openInHorizontalSplit(pdfPath)
-			}
+
 		];
 
 		fileNavigator.showContextMenu(e, menuItems);
@@ -101,25 +84,5 @@ export class NavigateToFile extends LitElement {
 		return this;
 	}
 
-	private findFile() {
-		// The path to the file is constructed from:
-		// 1. The configured root folder from settings
-		// 2. The sanitized filename
-		// 3. Adding .pdf/.md extension
-		const sanitizedName = sanitizeFilename(this.name.substring(1, this.name.length), true);
-		const rootFolder = this.scrybble.settings.sync_folder;
 
-		const pdfPath = rootFolder ? `${rootFolder}/${sanitizedName}.pdf` : `${sanitizedName}.pdf`;
-		const mdPath = rootFolder ? `${rootFolder}/${sanitizedName}.md` : `${sanitizedName}.md`;
-
-		const pdf = this.scrybble.fileNavigator.getFileByPath(pdfPath);
-		const md = this.scrybble.fileNavigator.getFileByPath(mdPath);
-
-		return {
-			pdfPath,
-			mdPath,
-			pdf,
-			md
-		};
-	}
 }
