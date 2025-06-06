@@ -1,4 +1,4 @@
-import {SyncJobEvents, SyncJobStates, SyncJob} from "./SyncJob";
+import {SyncJobStates, SyncJob} from "./SyncJob";
 import {ResponseError} from "./errorHandling/Errors";
 import {basename, dirPath, sanitizeFilename} from "./support";
 import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
