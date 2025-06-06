@@ -43,6 +43,8 @@ export class ScrybbleUI extends LitElement {
 					this.currentView = ScrybbleViewType.ONBOARDING;
 				}
 				this.requestUpdate();
+			} else if (state === AuthStates.UNAUTHENTICATED) {
+				this.requestUpdate();
 			}
 		});
 
