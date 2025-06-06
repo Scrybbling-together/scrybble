@@ -1,8 +1,10 @@
-import {Plugin, requestUrl, RequestUrlResponse, WorkspaceLeaf} from 'obsidian';
+import {Plugin, requestUrl, WorkspaceLeaf} from 'obsidian';
 import {
 	AuthenticateWithGumroadLicenseResponse,
 	DeviceCodeResponse,
-	DeviceTokenResponse, FeedbackFormDetails, OnboardingState, OneTimeCodeResponse,
+	DeviceTokenResponse,
+	FeedbackFormDetails,
+	OneTimeCodeResponse,
 	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
@@ -65,9 +67,13 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		const syncHistory = this.addStatusBarItem();
 		syncHistory.addClass("mod-clickable");
 		syncHistory.setText("Scrybble");
-		syncHistory.onClickEvent(() => {
-			this.showScrybbleFiletree()
-		});
+		syncHistory.onClickEvent(this.showScrybbleFiletree.bind(this));
+
+		this.addCommand({
+			id: "open-scrybble-pane",
+			name: "Open the Scrybble UI",
+			callback: this.showScrybbleFiletree.bind(this)
+		})
 
 		this.app.workspace.onLayoutReady(this.checkAccountStatus.bind(this));
 	}
@@ -270,12 +276,6 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return response.json;
 	}
 
-	private async checkAccountStatus() {
-		await this.authentication.initializeAuth();
-		if (this.authentication.isAuthenticated()) {
-			await this.sync();
-		}
-	}
 	public async fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
 		pino.info(`Sending request for a refresh token with ${this.refresh_token}`);
 		const formData = new URLSearchParams({
@@ -303,7 +303,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({ license })
+			body: JSON.stringify({license})
 		});
 
 		return response.json;
@@ -315,7 +315,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({ code })
+			body: JSON.stringify({code})
 		});
 
 		return response.json;
@@ -329,6 +329,13 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			},
 			body: JSON.stringify(details)
 		});
+	}
+
+	private async checkAccountStatus() {
+		await this.authentication.initializeAuth();
+		if (this.authentication.isAuthenticated()) {
+			await this.sync();
+		}
 	}
 }
 
