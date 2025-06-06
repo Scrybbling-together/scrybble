@@ -208,7 +208,6 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	}
 
 	async fetchDeviceCode(): Promise<DeviceCodeResponse> {
-		console.log(`Asking for device token to ${this.settings.endpoint}/oauth/device/code, with client_id: "${this.settings.client_id}"`)
 		const response = await requestUrl({
 			url: `${this.settings.endpoint}/oauth/device/code`,
 			method: 'POST',
