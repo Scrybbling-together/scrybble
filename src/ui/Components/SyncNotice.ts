@@ -117,7 +117,7 @@ export class SyncProgressIndicator extends LitElement {
 }
 export class SyncProgressNotice {
 	private notice: Notice;
-	private readonly indicator: SyncProgressIndicator; // The SyncProgressIndicator instance
+	private readonly indicator: SyncProgressIndicator;
 
 	constructor(filename: string) {
 		this.notice = new Notice("", 0);
@@ -133,17 +133,14 @@ export class SyncProgressNotice {
 	}
 
 	updateState(newState: SyncJobStates): void {
-		// Update the component's state
 		this.indicator.state = newState;
 
-		// If we've reached the end state, dismiss the notice after a short delay
 		if (newState === SyncJobStates.downloaded) {
 			setTimeout(() => {
 				this.notice.hide();
 			}, 2000);
 		}
 
-		// If there's an error, keep the notice longer so the user can see it
 		if (newState === SyncJobStates.failed_to_process) {
 			setTimeout(() => {
 				this.notice.hide();
