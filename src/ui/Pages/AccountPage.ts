@@ -58,11 +58,9 @@ export class AccountPage extends LitElement {
 	}
 
 	private stateChangeHandler = (newState: AuthStates) => {
-		console.log("State change", newState);
 		this.authState = newState;
 		this.requestUpdate();
 	};
-
 
 	private renderStateBasedContent(): TemplateResult {
 		switch (this.authState) {
@@ -166,9 +164,6 @@ export class AccountPage extends LitElement {
 		return html`
         <div class="account-card">
             <div class="device-auth-header">
-                <div class="auth-icon">
-                    ${getIcon("smartphone")}
-                </div>
                 <h2>Complete Authorization</h2>
                 <p>To connect your Scrybble account, follow these steps:</p>
             </div>
@@ -216,7 +211,7 @@ export class AccountPage extends LitElement {
 
                 <div class="step ${isPolling ? 'step-active' : ''}">
                     <div class="step-number">
-                        ${isPolling ? html`<div class="step-spinner">${getIcon("loader-2")}</div>` : '3'}
+                        ${isPolling ? html`<div class="step-spinner">${getIcon("loader-circle")}</div>` : '3'}
                     </div>
                     <div class="step-content">
                         <h3>${isPolling ? 'Waiting for authorization...' : 'Return here'}</h3>
@@ -265,9 +260,6 @@ export class AccountPage extends LitElement {
 		return html`
 			<div class="account-card">
 				<div class="account-header">
-					<div class="account-icon">
-						${getIcon("key-round")}
-					</div>
 					<h2>Connect to Scrybble</h2>
 					<p>Sign in to sync your ReMarkable highlights with Obsidian</p>
 				</div>

@@ -7,6 +7,8 @@ import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
 
 export interface ISyncQueue {
 	requestSync(filename: string): void;
+
+	subscribeToSyncStateChangesForFile(filename: string, callback: (newState: SyncJobStates) => void): void;
 }
 
 export class SyncQueue implements ISyncQueue {
@@ -45,14 +47,31 @@ export class SyncQueue implements ISyncQueue {
 		}, 2000)
 	}
 
+	private syncJobStateChangeListeners: Record<string, ((newState: SyncJobStates) => void)[]> = {};
+	syncjobStateChangeListener(filename: string, newState: SyncJobStates) {
+		if (this.syncJobStateChangeListeners.hasOwnProperty(filename)) {
+			for (let listener of this.syncJobStateChangeListeners[filename]) {
+				listener(newState);
+			}
+		}
+	}
+
+	subscribeToSyncStateChangesForFile(filename: string, callback: (newState: SyncJobStates) => void): void {
+		if (this.syncJobStateChangeListeners.hasOwnProperty(filename)) {
+			this.syncJobStateChangeListeners[filename].push(callback);
+		} else {
+			this.syncJobStateChangeListeners[filename] = [callback];
+		}
+	}
+
 	async downloadProcessedFile(filename: string, download_url: string, sync_id: number) {
-		const syncJob = new SyncJob(0, SyncJobStates.init, filename);
+		const syncJob = new SyncJob(0, SyncJobStates.init, (sync_filename, newState) => this.syncjobStateChangeListener(sync_filename, newState), filename);
 		await syncJob.readyToDownload(download_url, sync_id)
 		this.syncJobs.push(syncJob)
 	}
 
 	requestSync(filename: string) {
-		const job = new SyncJob(0, SyncJobStates.init, filename)
+		const job = new SyncJob(0, SyncJobStates.init, (sync_filename, newState) => this.syncjobStateChangeListener(sync_filename, newState), filename)
 		this.syncJobs.push(job)
 	}
 
@@ -129,7 +148,6 @@ export class SyncQueue implements ISyncQueue {
 		}
 	}
 
-
 	private async requestFileToBeSynced(job: SyncJob) {
 		try {
 			await job.syncRequestSent()
@@ -150,4 +168,5 @@ export class SyncQueue implements ISyncQueue {
 			await job.fileStillProcessing()
 		}
 	}
+
 }

@@ -99,7 +99,6 @@ export class ScrybbleOnboarding extends LitElement {
 			if ('error' in response) {
 				this.error = response.error;
 			} else {
-				console.log("setting state to", response, response.newState);
 				this.onboardingState = response.newState;
 				await this.handleStateChange();
 			}

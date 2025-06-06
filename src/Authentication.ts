@@ -350,15 +350,16 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 				await this.refreshAccessToken();
 				await this.fetchAndSetUser(false);
 			} catch (refreshError) {
+				pino.error(error, "You were unexpectedly logged out, please try to log back in again.");
+				this.settings.refresh_token = undefined;
+				this.settings.access_token = undefined;
+				await this.settings.save();
+				this.user = null;
+				await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
 				throw error;
 			}
 		} else {
-			pino.error(error, "You were unexpectedly logged out, please try to log back in again.");
-			this.settings.refresh_token = undefined;
-			this.settings.access_token = undefined;
-			await this.settings.save();
-			this.user = null;
-			await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
+			pino.error("Unexpected server error");
 			throw error;
 		}
 	}

@@ -42,6 +42,7 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 	constructor(
 		key: number = 0,
 		init: SyncJobStates.init = SyncJobStates.init,
+		private onStateChange: (filename: string, newState: SyncJobStates) => void,
 		public filename: string
 	) {
 		super(init, [], console);
@@ -51,40 +52,51 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 
 		const transitions = [
 			t(SyncJobStates.init, SyncJobEvents.syncRequestSent, SyncJobStates.sync_requested, () => {
+				this.onStateChange(this.filename, SyncJobStates.sync_requested);
 				notice.updateState(SyncJobStates.sync_requested);
 			}),
 			t(SyncJobStates.init, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
+				this.onStateChange(this.filename, SyncJobStates.ready_to_download);
 				notice.updateState(SyncJobStates.ready_to_download);
 			}),
 
 			t(SyncJobStates.sync_requested, SyncJobEvents.syncRequestConfirmed, SyncJobStates.processing, () => {
+				this.onStateChange(this.filename, SyncJobStates.processing);
 				notice.updateState(SyncJobStates.processing);
 			}),
 
 			t(SyncJobStates.processing, SyncJobEvents.sentProcessingCheckRequest, SyncJobStates.awaiting_processing, () => {
+				this.onStateChange(this.filename, SyncJobStates.awaiting_processing);
 				notice.updateState(SyncJobStates.awaiting_processing);
 			}),
 			t(SyncJobStates.awaiting_processing, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
+				this.onStateChange(this.filename, SyncJobStates.ready_to_download);
 				notice.updateState(SyncJobStates.ready_to_download);
 			}),
 			t(SyncJobStates.awaiting_processing, SyncJobEvents.stillProcessing, SyncJobStates.processing, () => {
+				this.onStateChange(this.filename, SyncJobStates.processing);
 				notice.updateState(SyncJobStates.processing);
 			}),
 			t(SyncJobStates.awaiting_processing, SyncJobEvents.failedToProcess, SyncJobStates.failed_to_process, () => {
+				this.onStateChange(this.filename, SyncJobStates.failed_to_process);
 				notice.updateState(SyncJobStates.failed_to_process);
 			}),
 
 			t(SyncJobStates.processing, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
+				this.onStateChange(this.filename, SyncJobStates.ready_to_download);
 				notice.updateState(SyncJobStates.ready_to_download);
 			}),
 			t(SyncJobStates.processing, SyncJobEvents.failedToProcess, SyncJobStates.failed_to_process, () => {
+				this.onStateChange(this.filename, SyncJobStates.failed_to_process);
 				notice.updateState(SyncJobStates.failed_to_process);
 			}),
 
 			t(SyncJobStates.ready_to_download, SyncJobEvents.downloadRequestSent, SyncJobStates.downloading, () => {
+				this.onStateChange(this.filename, SyncJobStates.downloading);
 				notice.updateState(SyncJobStates.downloading);
 			}),
 			t(SyncJobStates.downloading, SyncJobEvents.downloaded, SyncJobStates.downloaded, () => {
+				this.onStateChange(this.filename, SyncJobStates.downloaded);
 				notice.updateState(SyncJobStates.downloaded);
 			}),
 		];

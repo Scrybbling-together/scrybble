@@ -1,11 +1,12 @@
 import {LitElement, nothing} from "lit-element";
 import {html} from "lit-html";
 import {getIcon} from "obsidian";
-import {property} from "lit-element/decorators.js";
+import {property, state} from "lit-element/decorators.js";
 import {sanitizeFilename} from "../../support";
 import {consume} from "@lit/context";
 import {scrybbleContext} from "../scrybbleContext";
 import {ScrybbleCommon, SyncFile} from "../../../@types/scrybble";
+import {SyncJobStates} from "../../SyncJob";
 
 export class RmFile extends LitElement {
 	@consume({context: scrybbleContext})
@@ -15,16 +16,57 @@ export class RmFile extends LitElement {
 	@property({type: Object})
 	file!: SyncFile;
 
+	@state()
+	private currentlySyncing: boolean = false;
+
+	@state()
+	private syncOverride: SyncFile['sync'] | undefined = undefined;
+
+	constructor() {
+		super();
+	}
+
+	get sync(): SyncFile['sync'] {
+		if (this.syncOverride != null) {
+			return this.syncOverride;
+		}
+		return this.file.sync;
+	}
+
+	connectedCallback() {
+		super.connectedCallback();
+		this.scrybble.sync.subscribeToSyncStateChangesForFile(this.file.path, (newState: SyncJobStates) => {
+			this.currentlySyncing = !(newState === SyncJobStates.downloaded || newState === SyncJobStates.failed_to_process);
+
+			if (newState === SyncJobStates.downloaded) {
+				this.syncOverride = {
+					error: false,
+					completed: true,
+					created_at: "Just now",
+					id: "Unknown"
+				};
+			} else if (newState === SyncJobStates.failed_to_process) {
+				this.syncOverride = {
+					error: true,
+					completed: false,
+					created_at: "Just now",
+					id: "Unknown"
+				};
+			}
+
+			this.requestUpdate();
+		});
+	}
 
 	render() {
-		const sync = this.file.sync;
-
 		let syncState: "file-check-2" | "file-clock" | "file" | "file-x-2";
-		if (sync?.error) {
+		if (this.currentlySyncing) {
+			syncState = "file-clock";
+		} else if (this.sync?.error) {
 			syncState = "file-x-2";
-		} else if (sync?.completed) {
+		} else if (this.sync?.completed) {
 			syncState = "file-check-2";
-		} else if (sync != null && !sync?.error && !sync?.completed) {
+		} else if (this.sync != null && !this.sync?.error && !this.sync?.completed) {
 			syncState = "file-clock";
 		} else {
 			syncState = "file";
@@ -37,15 +79,15 @@ export class RmFile extends LitElement {
 			
 Click to download file to your vault`}">
 				<div class="tree-item-self rm-file is-clickable">
-					<span class="tree-item-icon">${getIcon(syncState)}</span>
+					<span class="tree-item-icon">${this.currentlySyncing ? this.renderSpinner() : getIcon(syncState)}</span>
 					<span class="filename">${this.file.name}</span>
 				</div>
 			</div>
 			<div class="tree-item">
 				<div class="tree-item-self additional">
-					<span class="when">${sync ? sync.created_at : "Not synced yet"}</span>
+					<span class="when">${this.sync ? this.sync.created_at : "Not synced yet"}</span>
 					<span class="file-links">
-						${sync ? html`
+						${this.sync ? html`
 							<a class="feedback" @click="${this.openFeedbackDialog.bind(this)}">feedback</a>
 							<span class="vertical-separator"></span>
 							<span class="pill pdf ${pdf ? "available" : "unavailable"}"
@@ -148,6 +190,10 @@ Click to download file to your vault`}">
 			pdf,
 			md
 		};
+	}
+
+	private renderSpinner() {
+		return html`${getIcon('loader-circle')}`;
 	}
 }
 
