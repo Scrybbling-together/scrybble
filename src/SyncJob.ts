@@ -134,4 +134,8 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 	async startDownload() {
 		await this.dispatch(SyncJobEvents.downloadRequestSent)
 	}
+
+	async processingFailed() {
+		await this.dispatch(SyncJobEvents.failedToProcess);
+	}
 }

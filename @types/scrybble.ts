@@ -87,6 +87,22 @@ export interface FeedbackFormDetails {
 	feedback?: string;
 }
 
+type SyncStateSuccess  = {
+	error: false;
+	completed: true;
+	download_url: string;
+}
+
+type SyncStateError = {
+	error: true;
+	completed: false;
+}
+
+type SyncStateResponse = {
+	id: number;
+	filename: string;
+} & (SyncStateSuccess | SyncStateError);
+
 export interface ScrybbleApi {
 	fetchSyncDelta(): Promise<ReadonlyArray<SyncDelta>>;
 
@@ -94,7 +110,7 @@ export interface ScrybbleApi {
 
 	fetchFileTree(path: string): Promise<RMFileTree>;
 
-	fetchSyncState(sync_id: number): Promise<any>;
+	fetchSyncState(sync_id: number): Promise<SyncStateResponse>;
 
 	fetchRequestFileToBeSynced(filePath: string): Promise<{ sync_id: number; filename: string; }>;
 

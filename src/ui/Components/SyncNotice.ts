@@ -44,8 +44,6 @@ export class SyncProgressIndicator extends LitElement {
 			case 'sync':
 				if (this.state === SyncJobStates.init) return 'Request Sync';
 				if (this.state === SyncJobStates.sync_requested) return 'Requesting Sync';
-				if (this.state === SyncJobStates.failed_to_process && this.getStageClass('sync') === 'stage-error')
-					return 'Failed to Request Sync';
 				if (this.getStageClass('sync') === 'stage-completed') return 'Requested Sync';
 				return 'Request Sync';
 
@@ -72,8 +70,6 @@ export class SyncProgressIndicator extends LitElement {
 					return 'Downloading';
 				if (this.state === SyncJobStates.downloaded)
 					return 'Downloaded';
-				// if (this.state === States.failed_to_download)
-				// 	return 'Failed to Download';
 				return 'Download';
 		}
 	}
@@ -82,12 +78,12 @@ export class SyncProgressIndicator extends LitElement {
 		switch (stage) {
 			case 'sync':
 				if (this.state === SyncJobStates.sync_requested) return 'stage-waiting';
-				if (this.state === SyncJobStates.failed_to_process) return 'stage-error';
 				if (this.state === SyncJobStates.processing ||
 					this.state === SyncJobStates.awaiting_processing ||
 					this.state === SyncJobStates.ready_to_download ||
 					this.state === SyncJobStates.downloading ||
-					this.state === SyncJobStates.downloaded) return 'stage-completed';
+					this.state === SyncJobStates.downloaded ||
+					this.state === SyncJobStates.failed_to_process) return 'stage-completed';
 				return '';
 
 			case 'process':

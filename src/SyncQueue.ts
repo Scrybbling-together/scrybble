@@ -52,13 +52,9 @@ export class SyncQueue implements ISyncQueue {
 
 	syncjobStateChangeListener(path: string, newState: SyncJobStates, job: SyncJob) {
 		if (this.syncJobStateChangeListeners.has(path)) {
-			console.log(`Listener(s) for the state change for ${path} exist.`)
 			for (let listener of this.syncJobStateChangeListeners.get(path)) {
-				console.log(`Calling listener for ${path}`)
 				listener(newState, job);
 			}
-		} else {
-			console.log("No listeners exist")
 		}
 	}
 
@@ -174,6 +170,8 @@ export class SyncQueue implements ISyncQueue {
 		const state = await this.api.fetchSyncState(job.sync_id)
 		if (state.completed) {
 			await job.readyToDownload(state.download_url, state.id)
+		} else if(state.error) {
+			await job.processingFailed()
 		} else {
 			await job.fileStillProcessing()
 		}
