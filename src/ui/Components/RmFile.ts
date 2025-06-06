@@ -33,7 +33,9 @@ export class RmFile extends LitElement {
 		const {pdf, md} = this.findFile();
 
 		return html`
-			<div class="tree-item" @click="${this._handleClick}" aria-label="Download file to your vault">
+			<div class="tree-item" @click="${this._handleClick}" aria-label="${`${this.file.name}
+			
+Click to download file to your vault`}">
 				<div class="tree-item-self rm-file is-clickable">
 					<span class="tree-item-icon">${getIcon(syncState)}</span>
 					<span class="filename">${this.file.name}</span>

@@ -47,7 +47,7 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 		super(init, [], console);
 
 		const notice = new SyncProgressNotice(filename);
-		notice.updateState(init); // Initialize notice with current state
+		notice.updateState(init);
 
 		const transitions = [
 			t(SyncJobStates.init, SyncJobEvents.syncRequestSent, SyncJobStates.sync_requested, () => {
