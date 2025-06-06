@@ -49,7 +49,7 @@ export class SyncQueue implements ISyncQueue {
 		}, 2000)
 	}
 
-	private syncJobStateChangeListeners: WeakMap<string, ((newState: SyncJobStates) => void)[]> = new WeakMap();
+	private syncJobStateChangeListeners: Map<string, ((newState: SyncJobStates) => void)[]> = new Map();
 	syncjobStateChangeListener(path: string, newState: SyncJobStates) {
 		if (this.syncJobStateChangeListeners.has(path)) {
 			for (let listener of this.syncJobStateChangeListeners.get(path)) {
