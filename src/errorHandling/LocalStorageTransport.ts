@@ -1,11 +1,3 @@
-import pino from "pino";
-import LogEvent = pino.LogEvent;
-import WriteFn = pino.WriteFn;
-
-interface LocalStorageTransportOptions {
-	key: string;
-	maxEntries: number;
-}
 const storageKey = 'scrybble-logs';
 const maxEntries = 200;
 
@@ -27,8 +19,6 @@ export default function writeToLocalstorage(obj: Record<string, any>) {
 			...obj,
 			timestamp: new Date().toISOString(),
 		};
-
-		console.log(logEntry);
 
 		existingLogs.push(logEntry);
 
