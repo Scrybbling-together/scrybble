@@ -233,7 +233,6 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	}
 
 	async fetchPollForDeviceToken(deviceCode: string): Promise<DeviceTokenResponse> {
-		console.log(`Polling for device token, id and secret are: ("${this.settings.client_id}", "${this.settings.client_secret}")`);
 		const response = await requestUrl({
 			url: `${this.settings.endpoint}/oauth/token`,
 			method: 'POST',
