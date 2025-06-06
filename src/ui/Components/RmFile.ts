@@ -58,6 +58,11 @@ export class RmFile extends LitElement {
 		});
 	}
 
+	disconnectedCallback() {
+		super.disconnectedCallback();
+		this.scrybble.sync.unsubscribeToSyncStateChangesForFile(this.file.path);
+	}
+
 	render() {
 		let syncState: "file-check-2" | "file-clock" | "file" | "file-x-2";
 		if (this.currentlySyncing) {

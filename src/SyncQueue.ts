@@ -8,7 +8,9 @@ import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
 export interface ISyncQueue {
 	requestSync(filename: string): void;
 
-	subscribeToSyncStateChangesForFile(filename: string, callback: (newState: SyncJobStates) => void): void;
+	subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates) => void): void;
+
+	unsubscribeToSyncStateChangesForFile(path: string): void;
 }
 
 export class SyncQueue implements ISyncQueue {
@@ -48,20 +50,24 @@ export class SyncQueue implements ISyncQueue {
 	}
 
 	private syncJobStateChangeListeners: WeakMap<string, ((newState: SyncJobStates) => void)[]> = new WeakMap();
-	syncjobStateChangeListener(filename: string, newState: SyncJobStates) {
-		if (this.syncJobStateChangeListeners.has(filename)) {
-			for (let listener of this.syncJobStateChangeListeners.get(filename)) {
+	syncjobStateChangeListener(path: string, newState: SyncJobStates) {
+		if (this.syncJobStateChangeListeners.has(path)) {
+			for (let listener of this.syncJobStateChangeListeners.get(path)) {
 				listener(newState);
 			}
 		}
 	}
 
-	subscribeToSyncStateChangesForFile(filename: string, callback: (newState: SyncJobStates) => void): void {
-		if (this.syncJobStateChangeListeners.has(filename)) {
-			this.syncJobStateChangeListeners.get(filename)!.push(callback);
+	subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates) => void): void {
+		if (this.syncJobStateChangeListeners.has(path)) {
+			this.syncJobStateChangeListeners.get(path)!.push(callback);
 		} else {
-			this.syncJobStateChangeListeners.set(filename, [callback]);
+			this.syncJobStateChangeListeners.set(path, [callback]);
 		}
+	}
+
+	unsubscribeToSyncStateChangesForFile(path: string) {
+		this.syncJobStateChangeListeners.delete(path);
 	}
 
 	async downloadProcessedFile(filename: string, download_url: string, sync_id: number) {
