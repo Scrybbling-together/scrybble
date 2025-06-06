@@ -92,8 +92,11 @@ scrybble-file-tree {
 			align-items: center;
 			gap: var(--size-4-1);
 
-			a {
-				color: var(--text-muted);
+			a.feedback {
+				color: color-mix(in oklab, var(--text-muted) 70%, white 30%);
+				&.disabled {
+					color: color-mix(in oklab, var(--text-muted) 40%, white 60%);
+				}
 			}
 
 			& span.vertical-separator {

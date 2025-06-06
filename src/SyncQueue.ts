@@ -1,4 +1,4 @@
-import {SyncJobStates, SyncJob} from "./SyncJob";
+import {SyncJob, SyncJobStates} from "./SyncJob";
 import {ResponseError} from "./errorHandling/Errors";
 import {basename, dirPath, sanitizeFilename} from "./support";
 import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
@@ -8,7 +8,7 @@ import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
 export interface ISyncQueue {
 	requestSync(filename: string): void;
 
-	subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates) => void): void;
+	subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates, job: SyncJob) => void): void;
 
 	unsubscribeToSyncStateChangesForFile(path: string): void;
 }
@@ -17,6 +17,7 @@ export class SyncQueue implements ISyncQueue {
 	private syncJobs: SyncJob[] = [];
 
 	private readonly busyStates = [SyncJobStates.downloading, SyncJobStates.awaiting_processing];
+	private syncJobStateChangeListeners: Map<string, ((newState: SyncJobStates) => void)[]> = new Map();
 
 	constructor(
 		private settings: ScrybbleSettings,
@@ -49,12 +50,15 @@ export class SyncQueue implements ISyncQueue {
 		}, 2000)
 	}
 
-	private syncJobStateChangeListeners: Map<string, ((newState: SyncJobStates) => void)[]> = new Map();
-	syncjobStateChangeListener(path: string, newState: SyncJobStates) {
+	syncjobStateChangeListener(path: string, newState: SyncJobStates, job: SyncJob) {
 		if (this.syncJobStateChangeListeners.has(path)) {
+			console.log(`Listener(s) for the state change for ${path} exist.`)
 			for (let listener of this.syncJobStateChangeListeners.get(path)) {
-				listener(newState);
+				console.log(`Calling listener for ${path}`)
+				listener(newState, job);
 			}
+		} else {
+			console.log("No listeners exist")
 		}
 	}
 
@@ -71,13 +75,13 @@ export class SyncQueue implements ISyncQueue {
 	}
 
 	async downloadProcessedFile(filename: string, download_url: string, sync_id: number) {
-		const syncJob = new SyncJob(0, SyncJobStates.init, (sync_filename, newState) => this.syncjobStateChangeListener(sync_filename, newState), filename);
+		const syncJob = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), filename);
 		await syncJob.readyToDownload(download_url, sync_id)
 		this.syncJobs.push(syncJob)
 	}
 
 	requestSync(filename: string) {
-		const job = new SyncJob(0, SyncJobStates.init, (sync_filename, newState) => this.syncjobStateChangeListener(sync_filename, newState), filename)
+		const job = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), filename)
 		this.syncJobs.push(job)
 	}
 

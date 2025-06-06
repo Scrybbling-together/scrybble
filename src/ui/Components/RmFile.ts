@@ -1,6 +1,6 @@
 import {LitElement, nothing} from "lit-element";
 import {html} from "lit-html";
-import {getIcon} from "obsidian";
+import {getIcon, Notice} from "obsidian";
 import {property, state} from "lit-element/decorators.js";
 import {sanitizeFilename} from "../../support";
 import {consume} from "@lit/context";
@@ -35,7 +35,7 @@ export class RmFile extends LitElement {
 
 	connectedCallback() {
 		super.connectedCallback();
-		this.scrybble.sync.subscribeToSyncStateChangesForFile(this.file.path, (newState: SyncJobStates) => {
+		this.scrybble.sync.subscribeToSyncStateChangesForFile(this.file.path, (newState: SyncJobStates, job) => {
 			this.currentlySyncing = !(newState === SyncJobStates.downloaded || newState === SyncJobStates.failed_to_process);
 
 			if (newState === SyncJobStates.downloaded) {
@@ -43,14 +43,14 @@ export class RmFile extends LitElement {
 					error: false,
 					completed: true,
 					created_at: "Just now",
-					id: "Unknown"
+					id: job.sync_id!
 				};
 			} else if (newState === SyncJobStates.failed_to_process) {
 				this.syncOverride = {
 					error: true,
 					completed: false,
 					created_at: "Just now",
-					id: "Unknown"
+					id: job.sync_id!
 				};
 			}
 
@@ -93,7 +93,7 @@ Click to download file to your vault`}">
 					<span class="when">${this.sync ? this.sync.created_at : "Not synced yet"}</span>
 					<span class="file-links">
 						${this.sync ? html`
-							<a class="feedback" @click="${this.openFeedbackDialog.bind(this)}">feedback</a>
+							<a class="feedback ${this.currentlySyncing ? 'disabled' : ''}" @click="${this.openFeedbackDialog.bind(this)}">feedback</a>
 							<span class="vertical-separator"></span>
 							<span class="pill pdf ${pdf ? "available" : "unavailable"}"
 								  @click="${this.clickPdf.bind(this)}">PDF</span>
@@ -111,6 +111,10 @@ Click to download file to your vault`}">
 	}
 
 	private openFeedbackDialog(_e) {
+		if (this.currentlySyncing) {
+			new Notice("Not available during syncing, please wait until syncing is done.");
+			return;
+		}
 		this.scrybble.openFeedbackDialog(this.file,
 			async (details) => {
 				await this.scrybble.api.fetchGiveFeedback(details);

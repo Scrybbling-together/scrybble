@@ -42,62 +42,62 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 	constructor(
 		key: number = 0,
 		init: SyncJobStates.init = SyncJobStates.init,
-		private onStateChange: (filename: string, newState: SyncJobStates) => void,
+		private onStateChange: (filename: string, newState: SyncJobStates, job: SyncJob) => void,
 		public filename: string
 	) {
 		super(init, [], console);
 
 		const notice = new SyncProgressNotice(filename);
-		this.onStateChange(this.filename, SyncJobStates.init);
+		this.onStateChange(this.filename, SyncJobStates.init, this);
 		notice.updateState(init);
 
 		const transitions = [
 			t(SyncJobStates.init, SyncJobEvents.syncRequestSent, SyncJobStates.sync_requested, () => {
-				this.onStateChange(this.filename, SyncJobStates.sync_requested);
+				this.onStateChange(this.filename, SyncJobStates.sync_requested, this);
 				notice.updateState(SyncJobStates.sync_requested);
 			}),
 			t(SyncJobStates.init, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
-				this.onStateChange(this.filename, SyncJobStates.ready_to_download);
+				this.onStateChange(this.filename, SyncJobStates.ready_to_download, this);
 				notice.updateState(SyncJobStates.ready_to_download);
 			}),
 
 			t(SyncJobStates.sync_requested, SyncJobEvents.syncRequestConfirmed, SyncJobStates.processing, () => {
-				this.onStateChange(this.filename, SyncJobStates.processing);
+				this.onStateChange(this.filename, SyncJobStates.processing, this);
 				notice.updateState(SyncJobStates.processing);
 			}),
 
 			t(SyncJobStates.processing, SyncJobEvents.sentProcessingCheckRequest, SyncJobStates.awaiting_processing, () => {
-				this.onStateChange(this.filename, SyncJobStates.awaiting_processing);
+				this.onStateChange(this.filename, SyncJobStates.awaiting_processing, this);
 				notice.updateState(SyncJobStates.awaiting_processing);
 			}),
 			t(SyncJobStates.awaiting_processing, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
-				this.onStateChange(this.filename, SyncJobStates.ready_to_download);
+				this.onStateChange(this.filename, SyncJobStates.ready_to_download, this);
 				notice.updateState(SyncJobStates.ready_to_download);
 			}),
 			t(SyncJobStates.awaiting_processing, SyncJobEvents.stillProcessing, SyncJobStates.processing, () => {
-				this.onStateChange(this.filename, SyncJobStates.processing);
+				this.onStateChange(this.filename, SyncJobStates.processing, this);
 				notice.updateState(SyncJobStates.processing);
 			}),
 			t(SyncJobStates.awaiting_processing, SyncJobEvents.failedToProcess, SyncJobStates.failed_to_process, () => {
-				this.onStateChange(this.filename, SyncJobStates.failed_to_process);
+				this.onStateChange(this.filename, SyncJobStates.failed_to_process, this);
 				notice.updateState(SyncJobStates.failed_to_process);
 			}),
 
 			t(SyncJobStates.processing, SyncJobEvents.ready, SyncJobStates.ready_to_download, () => {
-				this.onStateChange(this.filename, SyncJobStates.ready_to_download);
+				this.onStateChange(this.filename, SyncJobStates.ready_to_download, this);
 				notice.updateState(SyncJobStates.ready_to_download);
 			}),
 			t(SyncJobStates.processing, SyncJobEvents.failedToProcess, SyncJobStates.failed_to_process, () => {
-				this.onStateChange(this.filename, SyncJobStates.failed_to_process);
+				this.onStateChange(this.filename, SyncJobStates.failed_to_process, this);
 				notice.updateState(SyncJobStates.failed_to_process);
 			}),
 
 			t(SyncJobStates.ready_to_download, SyncJobEvents.downloadRequestSent, SyncJobStates.downloading, () => {
-				this.onStateChange(this.filename, SyncJobStates.downloading);
+				this.onStateChange(this.filename, SyncJobStates.downloading, this);
 				notice.updateState(SyncJobStates.downloading);
 			}),
 			t(SyncJobStates.downloading, SyncJobEvents.downloaded, SyncJobStates.downloaded, () => {
-				this.onStateChange(this.filename, SyncJobStates.downloaded);
+				this.onStateChange(this.filename, SyncJobStates.downloaded, this);
 				notice.updateState(SyncJobStates.downloaded);
 			}),
 		];

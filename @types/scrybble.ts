@@ -44,7 +44,7 @@ export interface Directory extends RMTreeItem {
 export type RMFileTree = { items: ReadonlyArray<RMTreeItem>, cwd: string };
 
 export interface SyncInfo {
-	id: number | "Unknown";
+	id: number;
 	completed: boolean;
 	error: boolean;
 	created_at: string;
