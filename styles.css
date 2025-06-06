@@ -83,6 +83,10 @@ scrybble-file-tree {
 			align-self: center;
 		}
 
+		& .when {
+			color: color-mix(in oklab, var(--text-muted) 70%, white 30%);
+		}
+
 		& .file-links {
 			display: flex;
 			align-items: center;
@@ -99,14 +103,14 @@ scrybble-file-tree {
 			}
 
 			& .pill {
-				--color-mix: 70%;
+				--color-mix: 50%;
 				font-size: 0.75em;
 				border-radius: var(--button-radius);
 				padding: var(--size-4-1);
 				transition: all 120ms ease-in;
 
 				&:hover {
-					--color-mix: 80%;
+					--color-mix: 70%;
 				}
 
 				&.available {
