@@ -91,7 +91,7 @@ export class SyncQueue implements ISyncQueue {
 		const folderPath = await this.ensureFolderExists(this.vault, relativePath, this.settings.sync_folder)
 
 		this.onStartDownloadFile(job)
-		await job.dispatch(SyncJobEvents.downloadRequestSent)
+		await job.startDownload()
 		const response = await requestUrl({
 			method: "GET",
 			url: job.download_url

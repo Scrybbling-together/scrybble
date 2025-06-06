@@ -130,4 +130,8 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 	async syncRequestSent() {
 		await this.dispatch(SyncJobEvents.syncRequestSent);
 	}
+
+	async startDownload() {
+		await this.dispatch(SyncJobEvents.downloadRequestSent)
+	}
 }
