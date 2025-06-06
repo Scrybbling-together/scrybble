@@ -26,7 +26,11 @@ export class FileSyncFeedbackModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		this.setTitle("Your reMarkable document isn't syncing well. Need help?");
+		if (this.syncFile.sync?.error) {
+			this.setTitle("Your reMarkable document isn't syncing well. Need help?");
+		} else {
+			this.setTitle("Got feedback about this document? Let us know!")
+		}
 
 		new Setting(contentEl)
 			.setHeading()
