@@ -5,7 +5,8 @@ export class SettingsImpl implements ScrybbleSettings {
 	public readonly self_hosted: boolean = false;
 	public readonly custom_host: Host = {
 		endpoint: "",
-		client_secret: ""
+		client_secret: "",
+		client_id: ""
 	}
 	public readonly sync_state: Record<string, number>  = {}
 
@@ -30,6 +31,20 @@ export class SettingsImpl implements ScrybbleSettings {
 		} else {
 			return "https://scrybble.ink"
 		}
+	}
+
+	get client_id(): string {
+		if (this.self_hosted) {
+			return this.custom_host.client_id
+		}
+		return "";
+	}
+
+	get client_secret(): string {
+		if (this.self_hosted){
+			return this.custom_host.client_secret;
+		}
+		return "";
 	}
 
 }

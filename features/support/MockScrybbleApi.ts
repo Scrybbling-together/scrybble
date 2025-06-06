@@ -150,17 +150,6 @@ export class MockScrybbleApi implements ScrybbleApi {
 		}
 	}
 
-	fetchOAuthAccessToken(code: string, codeVerifier: string): Promise<{
-		access_token: string;
-		refresh_token: string
-	}> {
-		this.throwIfErrorIsConfigured("fetchOAuthAccessToken");
-		this.settings.access_token = "test_access_token";
-		this.settings.refresh_token = "test_refresh_token";
-		this.accessTokenExpired = false;
-		return Promise.resolve({access_token: "test_access_token", refresh_token: "test_refresh_token"});
-	}
-
 	fetchRefreshOAuthAccessToken(): Promise<{ access_token: string; refresh_token: string }> {
 		this.throwIfErrorIsConfigured("fetchRefreshOAuthAccessToken");
 		this.settings.access_token = "new_test_access_token";

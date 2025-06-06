@@ -207,31 +207,8 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return {...response.json};
 	}
 
-	public async fetchOAuthAccessToken(code: string, codeVerifier: string) {
-		const response = await requestUrl({
-			url: `${this.settings.endpoint}/oauth/token`,
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Accept': 'application/json'
-			},
-			body: JSON.stringify({
-				grant_type: 'authorization_code',
-				client_id: 2,
-				code: code,
-				redirect_uri: 'obsidian://scrybble-oauth',
-				code_verifier: codeVerifier
-			})
-		});
-
-		if (response.status !== 200) {
-			throw new Error(`Token exchange failed: ${response.status}`);
-		}
-
-		return response.json;
-	}
-
 	async fetchDeviceCode(): Promise<DeviceCodeResponse> {
+		console.log(`Asking for device token to ${this.settings.endpoint}/oauth/device/code, with client_id: "${this.settings.client_id}"`)
 		const response = await requestUrl({
 			url: `${this.settings.endpoint}/oauth/device/code`,
 			method: 'POST',
@@ -240,8 +217,8 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 				'Accept': 'application/json',
 			},
 			body: new URLSearchParams({
-				client_id: '01972250-9214-7159-ae68-45a841b071e4', // Your device client ID
-				scope: '', // Adjust scopes as needed
+				client_id: this.settings.client_id,
+				scope: '',
 			}).toString(),
 		});
 
@@ -255,8 +232,8 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return data;
 	}
 
-
 	async fetchPollForDeviceToken(deviceCode: string): Promise<DeviceTokenResponse> {
+		console.log(`Polling for device token, id and secret are: ("${this.settings.client_id}", "${this.settings.client_secret}")`);
 		const response = await requestUrl({
 			url: `${this.settings.endpoint}/oauth/token`,
 			method: 'POST',
@@ -266,9 +243,9 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			},
 			body: new URLSearchParams({
 				grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-				client_id: '01972250-9214-7159-ae68-45a841b071e4', // Your device client ID
+				client_id: this.settings.client_id,
 				device_code: deviceCode,
-				client_secret: "ci3rL0u7S4pl2fgGQMELEWXYKKbWdnBz3P9D2q9A"
+				client_secret: this.settings.client_secret
 			}).toString(),
 			throw: false
 		});
@@ -280,7 +257,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		pino.info(`Sending request for a refresh token with ${this.refresh_token}`);
 		const formData = new URLSearchParams({
 			grant_type: 'refresh_token',
-			client_id: '2',
+			client_id: this.settings.client_id,
 			refresh_token: this.refresh_token!,
 			scope: ''
 		});

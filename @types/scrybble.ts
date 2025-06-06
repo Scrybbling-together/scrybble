@@ -1,11 +1,10 @@
 import {ISyncQueue} from "../src/SyncQueue";
 import {Authentication} from "../src/Authentication";
-import {App} from "obsidian";
-import {FileSyncFeedbackModal} from "../src/ui/Components/FileSyncFeedbackModal";
 
 export interface Host {
 	endpoint: string;
 	client_secret: string;
+	client_id: string;
 }
 
 export interface ScrybbleSettings {
@@ -19,6 +18,8 @@ export interface ScrybbleSettings {
 	access_token?: string;
 	refresh_token?: string;
 
+	get client_id(): string;
+	get client_secret(): string;
 	get endpoint(): string;
 
 	save(): Promise<void>;
@@ -100,8 +101,6 @@ export interface ScrybbleApi {
 	fetchOnboardingState(): Promise<OnboardingState>;
 
 	fetchGetUser(): Promise<ScrybbleUser>;
-
-	fetchOAuthAccessToken(code: string, codeVerifier: string): Promise<{ access_token: string; refresh_token: string }>;
 
 	fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }>;
 
