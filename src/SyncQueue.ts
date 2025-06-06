@@ -47,20 +47,20 @@ export class SyncQueue implements ISyncQueue {
 		}, 2000)
 	}
 
-	private syncJobStateChangeListeners: Record<string, ((newState: SyncJobStates) => void)[]> = {};
+	private syncJobStateChangeListeners: WeakMap<string, ((newState: SyncJobStates) => void)[]> = new WeakMap();
 	syncjobStateChangeListener(filename: string, newState: SyncJobStates) {
-		if (this.syncJobStateChangeListeners.hasOwnProperty(filename)) {
-			for (let listener of this.syncJobStateChangeListeners[filename]) {
+		if (this.syncJobStateChangeListeners.has(filename)) {
+			for (let listener of this.syncJobStateChangeListeners.get(filename)) {
 				listener(newState);
 			}
 		}
 	}
 
 	subscribeToSyncStateChangesForFile(filename: string, callback: (newState: SyncJobStates) => void): void {
-		if (this.syncJobStateChangeListeners.hasOwnProperty(filename)) {
-			this.syncJobStateChangeListeners[filename].push(callback);
+		if (this.syncJobStateChangeListeners.has(filename)) {
+			this.syncJobStateChangeListeners.get(filename)!.push(callback);
 		} else {
-			this.syncJobStateChangeListeners[filename] = [callback];
+			this.syncJobStateChangeListeners.set(filename, [callback]);
 		}
 	}
 
@@ -168,5 +168,4 @@ export class SyncQueue implements ISyncQueue {
 			await job.fileStillProcessing()
 		}
 	}
-
 }
