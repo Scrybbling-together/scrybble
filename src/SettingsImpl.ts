@@ -14,13 +14,19 @@ export class SettingsImpl implements ScrybbleSettings {
 	public readonly access_token?: string;
 	public readonly save: () => Promise<void>;
 
-	public constructor({sync_folder, sync_state, self_hosted, custom_host, refresh_token, access_token}: Omit<ScrybbleSettings, "endpoint" | "save" | "client_id" | "client_secret">, saveSettings: () => Promise<void>) {
-		this.sync_folder = sync_folder;
-		this.sync_state = sync_state;
-		this.self_hosted = self_hosted;
-		this.custom_host = custom_host;
-		this.refresh_token = refresh_token;
-		this.access_token = access_token;
+	public constructor(s: Omit<ScrybbleSettings, "endpoint" | "save" | "client_id" | "client_secret">, saveSettings: () => Promise<void>) {
+		this.sync_folder = s.sync_folder ?? "scrybble";
+		this.sync_state = s.sync_state ?? {};
+		this.self_hosted = s.self_hosted ?? false;
+		if (s.custom_host) {
+			this.custom_host = s.custom_host;
+		}
+		if (s.refresh_token) {
+			this.refresh_token = s.refresh_token;
+		}
+		if (s.access_token) {
+			this.refresh_token = s.refresh_token;
+		}
 
 		this.save = saveSettings;
 	}
