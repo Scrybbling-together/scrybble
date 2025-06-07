@@ -4,7 +4,6 @@ import {
 	DeviceFlowError,
 	DeviceTokenResponse,
 	FeedbackFormDetails,
-	FeedbackResponse,
 	OneTimeCodeResponse,
 	PaginatedResponse,
 	RMFileTree,
@@ -14,7 +13,6 @@ import {
 	SyncDelta,
 	SyncFile
 } from "../../@types/scrybble";
-import {t} from "typescript-fsm";
 
 export class MockScrybbleApi implements ScrybbleApi {
 	private loggedIn: boolean = false;

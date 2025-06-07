@@ -1,10 +1,11 @@
 import { LitElement, html, TemplateResult } from "lit-element";
 import { property } from "lit-element/decorators.js";
 import { getIcon } from "obsidian";
+import {RMTreeItem} from "../../../@types/scrybble";
 
 export class RmDir extends LitElement {
 	@property({type: Object})
-	directory!: object
+	directory!: RMTreeItem
 
 
 	render(): TemplateResult {

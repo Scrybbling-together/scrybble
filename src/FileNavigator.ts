@@ -1,4 +1,4 @@
-import {FileNavigator} from "../@types/scrybble";
+import {ContextMenuItem, FileNavigator} from "../@types/scrybble";
 import {App, Menu} from "obsidian";
 
 

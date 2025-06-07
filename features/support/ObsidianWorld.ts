@@ -5,6 +5,7 @@ import sinon, {SinonSpy} from "sinon";
 import {MockFileNavigator} from "./MockFileNavigator";
 import {Authentication} from "../../src/Authentication";
 import {SettingsImpl} from "../../src/SettingsImpl";
+import {SyncJob, SyncJobStates} from "../../src/SyncJob";
 
 export class ObsidianWorld extends World {
 	public container: HTMLDivElement | null;
@@ -30,8 +31,10 @@ export class ObsidianWorld extends World {
 			sync_state: {},
 			custom_host: {
 				client_secret: "",
-				endpoint: ""
+				endpoint: "",
+				client_id: ""
 			},
+
 			self_hosted: false
 		}, () => {
 			return Promise.resolve();
@@ -44,6 +47,10 @@ export class ObsidianWorld extends World {
 			api: this.api,
 			sync: {
 				requestSync(filename: string) {
+				},
+				unsubscribeToSyncStateChangesForFile(path: string) {
+				},
+				subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates, job: SyncJob) => void) {
 				}
 			},
 			settings,
@@ -54,7 +61,7 @@ export class ObsidianWorld extends World {
 				obsidianVersion: "unknown",
 				platformInfo: "development"
 			},
-			openFeedbackDialog: (syncFile, onSubmit) => {}
+			openFeedbackDialog: (syncFile, onSubmit) => {},
 		};
 
 		this.spies = {

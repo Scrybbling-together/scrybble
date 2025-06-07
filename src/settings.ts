@@ -2,13 +2,16 @@ import {App, PluginSettingTab, Setting} from "obsidian";
 import Scrybble from "../main";
 
 export class Settings extends PluginSettingTab {
-	plugin: Scrybble;
+	// @ts-expect-error TS2564
 	private endpointSetting: Setting;
+	// @ts-expect-error TS2564
 	private clientSecretSetting: Setting;
+	// @ts-expect-error TS2564
 	private connectedMessage: HTMLElement;
+	// @ts-expect-error TS2564
 	private clientIdSetting: Setting;
 
-	constructor(app: App, plugin: Scrybble) {
+	constructor(app: App, private readonly plugin: Scrybble) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

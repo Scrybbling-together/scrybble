@@ -7,11 +7,16 @@ export class FileSyncFeedbackModal extends Modal {
 	private comment: string = '';
 
 	// toggles
+	// @ts-expect-error TS2564
 	private openAccessSetting: ToggleComponent;
+	// @ts-expect-error TS2564
 	private commentSetting: Setting;
 
+	// @ts-expect-error TS2564
 	private whatWillBeShared: Setting;
+	// @ts-expect-error TS2564
 	private whoWillBeSharedWith: Setting;
+	// @ts-expect-error TS2564
 	private shareButton: ButtonComponent;
 
 	constructor(

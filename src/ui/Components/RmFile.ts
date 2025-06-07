@@ -110,7 +110,7 @@ Click to download file to your vault`}">
 		return this
 	}
 
-	private openFeedbackDialog(_e) {
+	private openFeedbackDialog() {
 		if (this.currentlySyncing) {
 			new Notice("Not available during syncing, please wait until syncing is done.");
 			return;
@@ -121,7 +121,7 @@ Click to download file to your vault`}">
 			});
 	}
 
-	private clickMd(e) {
+	private clickMd(e: MouseEvent) {
 		const {md, mdPath} = this.findFile()
 
 		if (md) {
@@ -146,7 +146,7 @@ Click to download file to your vault`}">
 		}
 	}
 
-	private clickPdf(e) {
+	private clickPdf(e: MouseEvent) {
 		const {pdf, pdfPath} = this.findFile()
 
 		if (pdf) {

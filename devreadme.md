@@ -27,4 +27,4 @@ Working on doing this on push using github actions! Boop
 2. [ ] Push to Github
 3. [ ] run `npm run build`
 4. [ ] On Github, create new release with tag `{YOUR VERSION}` and title `v{YOUR VERSION}`
-	- Attach `main.js`, `main.css` and `manifest.json`
+	- Attach `main.js`, `styles.css`, and `manifest.json`

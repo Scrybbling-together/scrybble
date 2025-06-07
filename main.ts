@@ -26,9 +26,11 @@ import {pino} from "./src/errorHandling/logging";
 loadLitComponents()
 
 export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePersistentStorage {
-	// @ts-ignore -- onload acts as a constructor.
+	// @ts-expect-error TS2564 -- onload acts as a constructor.
 	public settings: ScrybbleSettings;
+	// @ts-expect-error TS2564 -- onload acts as a constructor.
 	public syncQueue: SyncQueue;
+	// @ts-expect-error TS2564 -- onload acts as a constructor.
 	public authentication: Authentication;
 
 	get access_token(): string | null {
@@ -53,7 +55,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			function onStartDownloadFile(job) {
 			},
 			(job) => {
-				this.settings.sync_state[job.filename] = job.sync_id
+				this.settings.sync_state[job.filename] = job.sync_id!
 				this.settings.save()
 			}
 		);
@@ -91,11 +93,13 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			// Our view could not be found in the workspace, create a new leaf
 			// in the right sidebar for it
 			leaf = workspace.getRightLeaf(false);
-			await leaf.setViewState({type: SCRYBBLE_VIEW, active: true});
+			await leaf?.setViewState({type: SCRYBBLE_VIEW, active: true});
 		}
 
 		// "Reveal" the leaf in case it is in a collapsed sidebar
-		workspace.revealLeaf(leaf);
+		if (leaf instanceof WorkspaceLeaf) {
+			await workspace.revealLeaf(leaf);
+		}
 	}
 
 	async authenticatedRequest(url: string, options: any = {}) {

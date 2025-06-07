@@ -17,7 +17,8 @@ export class SyncQueue implements ISyncQueue {
 	private syncJobs: SyncJob[] = [];
 
 	private readonly busyStates = [SyncJobStates.downloading, SyncJobStates.awaiting_processing];
-	private syncJobStateChangeListeners: Map<string, ((newState: SyncJobStates) => void)[]> = new Map();
+	private syncJobStateChangeListeners: Map<string, ((newState: SyncJobStates, job: SyncJob) => void)[]> = new Map();
+
 
 	constructor(
 		private settings: ScrybbleSettings,
@@ -52,13 +53,14 @@ export class SyncQueue implements ISyncQueue {
 
 	syncjobStateChangeListener(path: string, newState: SyncJobStates, job: SyncJob) {
 		if (this.syncJobStateChangeListeners.has(path)) {
-			for (let listener of this.syncJobStateChangeListeners.get(path)) {
+			const listeners = this.syncJobStateChangeListeners.get(path) ?? [];
+			for (let listener of listeners) {
 				listener(newState, job);
 			}
 		}
 	}
 
-	subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates) => void): void {
+	subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates, job: SyncJob) => void): void {
 		if (this.syncJobStateChangeListeners.has(path)) {
 			this.syncJobStateChangeListeners.get(path)!.push(callback);
 		} else {
@@ -94,17 +96,19 @@ export class SyncQueue implements ISyncQueue {
 		await job.startDownload()
 		const response = await requestUrl({
 			method: "GET",
-			url: job.download_url
+			url: job.download_url!
 		})
 
 		try {
 			const zip = await jszip.loadAsync(response.arrayBuffer)
+			// @ts-expect-error TS2345
 			await this.zippedFileToVault(this.vault, zip, /_remarks(-only)?.pdf/, `${folderPath}${nameOfFile}.pdf`)
+			// @ts-expect-error TS2345
 			await this.zippedFileToVault(this.vault, zip, /_obsidian.md/, `${folderPath}${nameOfFile}.md`, false)
 			await job.downloaded()
 			this.onFinishedDownloadFile(job, true)
 		} catch (e) {
-			this.onFinishedDownloadFile(job, false, e)
+			this.onFinishedDownloadFile(job, false, e as Error)
 		}
 	}
 
@@ -167,7 +171,7 @@ export class SyncQueue implements ISyncQueue {
 
 	private async checkProcessingState(job: SyncJob) {
 		await job.sentProcessingRequest()
-		const state = await this.api.fetchSyncState(job.sync_id)
+		const state = await this.api.fetchSyncState(job.sync_id!)
 		if (state.completed) {
 			await job.readyToDownload(state.download_url, state.id)
 		} else if(state.error) {
