@@ -25,7 +25,7 @@ export class SettingsImpl implements ScrybbleSettings {
 			this.refresh_token = s.refresh_token;
 		}
 		if (s?.access_token) {
-			this.refresh_token = s.refresh_token;
+			this.access_token = s.access_token;
 		}
 
 		this.save = saveSettings;
