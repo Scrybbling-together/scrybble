@@ -37,14 +37,14 @@ export class SettingsImpl implements ScrybbleSettings {
 		if (this.self_hosted) {
 			return this.custom_host.client_id
 		}
-		return "";
+		return "01974a5d-3464-7196-8ce5-3cd60d33ce1a";
 	}
 
 	get client_secret(): string {
 		if (this.self_hosted){
 			return this.custom_host.client_secret;
 		}
-		return "";
+		return "NgEG2sIPyK3MD2UMuwsdS4urq7FyVZUQOBZ5XeQ4";
 	}
 
 }
