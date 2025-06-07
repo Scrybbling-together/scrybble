@@ -481,6 +481,14 @@ scrybble-support {
 	flex-shrink: 0;
 }
 
+.step-spinner {
+	display: flex;
+
+	& .svg-icon {
+		stroke: white;
+	}
+}
+
 .step-completed .step-number {
 	background: var(--interactive-accent);
 	color: var(--text-on-accent);
