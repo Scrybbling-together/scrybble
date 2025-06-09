@@ -1,7 +1,8 @@
 import {
 	DeviceFlowError,
 	DeviceTokenErrorResponse,
-	DeviceTokenResponse, DeviceTokenSuccessResponse,
+	DeviceTokenResponse,
+	DeviceTokenSuccessResponse,
 	ScrybbleApi,
 	ScrybbleSettings,
 	ScrybbleUser
@@ -81,6 +82,64 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 	private listeners: ((new_state: AuthStates) => void)[] = [];
 	private pollingTimer: number | null = null;
 
+	constructor(private settings: ScrybbleSettings, private api: ScrybbleApi) {
+		super(AuthStates.INIT, []);
+
+		/**
+		 * ```mermaid
+		 * stateDiagram-v2
+		 * [*] --> INIT
+		 * INIT --> REQUESTING_DEVICE_CODE: LOGIN_REQUEST
+		 * INIT --> FETCHING_USER: TOKEN_FOUND_ON_START
+		 * INIT --> UNAUTHENTICATED: NO_TOKEN_FOUND_ON_START
+		 * REQUESTING_DEVICE_CODE --> WAITING_FOR_USER_AUTHORIZATION: DEVICE_CODE_RECEIVED
+		 * REQUESTING_DEVICE_CODE --> UNAUTHENTICATED: DEVICE_CODE_REQUEST_FAILED
+		 * WAITING_FOR_USER_AUTHORIZATION --> POLLING_FOR_TOKEN: POLLING_START
+		 * WAITING_FOR_USER_AUTHORIZATION --> UNAUTHENTICATED: DEVICE_FLOW_CANCEL
+		 * POLLING_FOR_TOKEN --> FETCHING_USER: ACCESS_TOKEN_RECEIVED
+		 * POLLING_FOR_TOKEN --> UNAUTHENTICATED: AUTHORIZATION_EXPIRED
+		 * POLLING_FOR_TOKEN --> UNAUTHENTICATED: AUTHORIZATION_DENIED
+		 * POLLING_FOR_TOKEN --> UNAUTHENTICATED: DEVICE_FLOW_CANCEL
+		 * FETCHING_USER --> AUTHENTICATED: USER_FETCH
+		 * FETCHING_USER --> UNAUTHENTICATED: USER_FETCH_FAILED
+		 * AUTHENTICATED --> UNAUTHENTICATED: LOGOUT_REQUEST
+		 * REFRESHING_TOKEN --> FETCHING_USER: REFRESH_SUCCESS
+		 * REFRESHING_TOKEN --> UNAUTHENTICATED: REFRESH_FAILURE
+		 * UNAUTHENTICATED --> REQUESTING_DEVICE_CODE: LOGIN_REQUEST
+		 * UNAUTHENTICATED --> REFRESHING_TOKEN: ACCESS_TOKEN_EXPIRED
+		 * ```
+		 */
+		const transitions = [
+			t(AuthStates.INIT, AuthEvents.LOGIN_REQUESTED, AuthStates.REQUESTING_DEVICE_CODE, this.broadcastStateChange.bind(this)),
+			t(AuthStates.INIT, AuthEvents.TOKEN_FOUND_ON_STARTUP, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
+			t(AuthStates.INIT, AuthEvents.NO_TOKEN_FOUND_ON_STARTUP, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			t(AuthStates.REQUESTING_DEVICE_CODE, AuthEvents.DEVICE_CODE_RECEIVED, AuthStates.WAITING_FOR_USER_AUTHORIZATION, this.broadcastStateChange.bind(this)),
+			t(AuthStates.REQUESTING_DEVICE_CODE, AuthEvents.DEVICE_CODE_REQUEST_FAILED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			t(AuthStates.WAITING_FOR_USER_AUTHORIZATION, AuthEvents.POLLING_STARTED, AuthStates.POLLING_FOR_TOKEN, this.broadcastStateChange.bind(this)),
+			t(AuthStates.WAITING_FOR_USER_AUTHORIZATION, AuthEvents.DEVICE_FLOW_CANCELED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.ACCESS_TOKEN_RECEIVED, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
+			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.AUTHORIZATION_EXPIRED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.AUTHORIZATION_DENIED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.DEVICE_FLOW_CANCELED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			t(AuthStates.FETCHING_USER, AuthEvents.USER_FETCHED, AuthStates.AUTHENTICATED, this.broadcastStateChange.bind(this)),
+			t(AuthStates.FETCHING_USER, AuthEvents.USER_FETCH_FAILED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			t(AuthStates.AUTHENTICATED, AuthEvents.LOGOUT_REQUESTED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			t(AuthStates.REFRESHING_TOKEN, AuthEvents.REFRESH_SUCCESS, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
+			t(AuthStates.REFRESHING_TOKEN, AuthEvents.REFRESH_FAILURE, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
+
+			t(AuthStates.UNAUTHENTICATED, AuthEvents.LOGIN_REQUESTED, AuthStates.REQUESTING_DEVICE_CODE, this.broadcastStateChange.bind(this)),
+			t(AuthStates.UNAUTHENTICATED, AuthEvents.ACCESS_TOKEN_EXPIRED, AuthStates.REFRESHING_TOKEN, this.broadcastStateChange.bind(this))
+		];
+
+		this.addTransitions(transitions);
+	}
+
 	broadcastStateChange() {
 		for (const listener of this.listeners) {
 			listener(this.getState());
@@ -89,49 +148,6 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 
 	addStateChangeListener(listener: (new_state: AuthStates) => void) {
 		this.listeners.push(listener);
-	}
-
-	constructor(private settings: ScrybbleSettings, private api: ScrybbleApi) {
-		super(AuthStates.INIT, []);
-
-		// Define all state transitions
-		const transitions = [
-			// From INIT
-			t(AuthStates.INIT, AuthEvents.LOGIN_REQUESTED, AuthStates.REQUESTING_DEVICE_CODE, this.broadcastStateChange.bind(this)),
-			t(AuthStates.INIT, AuthEvents.TOKEN_FOUND_ON_STARTUP, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
-			t(AuthStates.INIT, AuthEvents.NO_TOKEN_FOUND_ON_STARTUP, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-
-			// From REQUESTING_DEVICE_CODE
-			t(AuthStates.REQUESTING_DEVICE_CODE, AuthEvents.DEVICE_CODE_RECEIVED, AuthStates.WAITING_FOR_USER_AUTHORIZATION, this.broadcastStateChange.bind(this)),
-			t(AuthStates.REQUESTING_DEVICE_CODE, AuthEvents.DEVICE_CODE_REQUEST_FAILED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-
-			// From WAITING_FOR_USER_AUTHORIZATION
-			t(AuthStates.WAITING_FOR_USER_AUTHORIZATION, AuthEvents.POLLING_STARTED, AuthStates.POLLING_FOR_TOKEN, this.broadcastStateChange.bind(this)),
-			t(AuthStates.WAITING_FOR_USER_AUTHORIZATION, AuthEvents.DEVICE_FLOW_CANCELED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-
-			// From POLLING_FOR_TOKEN
-			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.ACCESS_TOKEN_RECEIVED, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
-			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.AUTHORIZATION_EXPIRED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.AUTHORIZATION_DENIED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-			t(AuthStates.POLLING_FOR_TOKEN, AuthEvents.DEVICE_FLOW_CANCELED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-
-			// From FETCHING_USER
-			t(AuthStates.FETCHING_USER, AuthEvents.USER_FETCHED, AuthStates.AUTHENTICATED, this.broadcastStateChange.bind(this)),
-			t(AuthStates.FETCHING_USER, AuthEvents.USER_FETCH_FAILED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-
-			// From AUTHENTICATED
-			t(AuthStates.AUTHENTICATED, AuthEvents.LOGOUT_REQUESTED, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-
-			// From REFRESHING_TOKEN
-			t(AuthStates.REFRESHING_TOKEN, AuthEvents.REFRESH_SUCCESS, AuthStates.FETCHING_USER, this.broadcastStateChange.bind(this)),
-			t(AuthStates.REFRESHING_TOKEN, AuthEvents.REFRESH_FAILURE, AuthStates.UNAUTHENTICATED, this.broadcastStateChange.bind(this)),
-
-			// From UNAUTHENTICATED
-			t(AuthStates.UNAUTHENTICATED, AuthEvents.LOGIN_REQUESTED, AuthStates.REQUESTING_DEVICE_CODE, this.broadcastStateChange.bind(this)),
-			t(AuthStates.UNAUTHENTICATED, AuthEvents.ACCESS_TOKEN_EXPIRED, AuthStates.REFRESHING_TOKEN, this.broadcastStateChange.bind(this))
-		];
-
-		this.addTransitions(transitions);
 	}
 
 	public async initializeAuth(): Promise<void> {
@@ -143,22 +159,6 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 		}
 	}
 
-	private async fetchAndSetUser(attemptRefreshOnFailure=true): Promise<void> {
-		try {
-			this.user = await this.api.fetchGetUser();
-			await this.dispatch(AuthEvents.USER_FETCHED);
-		} catch (error) {
-			pino.error(error, "Failed to fetch user data");
-			await this.dispatch(AuthEvents.USER_FETCH_FAILED);
-			if (attemptRefreshOnFailure) {
-				await this.refreshToken(error as Error);
-			}
-		}
-	}
-
-	/**
-	 * Start the Device Authorization Grant flow
-	 */
 	public async initiateDeviceFlow(): Promise<void> {
 		await this.dispatch(AuthEvents.LOGIN_REQUESTED);
 
@@ -176,9 +176,110 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 		}
 	}
 
-	/**
-	 * Start polling for token
-	 */
+	public async cancelDeviceFlow(): Promise<void> {
+		this.stopPolling();
+		this.deviceAuth = null;
+		await this.dispatch(AuthEvents.DEVICE_FLOW_CANCELED);
+	}
+
+	public async copyUserCodeToClipboard(): Promise<boolean> {
+		if (!this.deviceAuth?.user_code) {
+			return false;
+		}
+
+		try {
+			await navigator.clipboard.writeText(this.deviceAuth.user_code);
+			return true;
+		} catch (error) {
+			pino.warn("Failed to copy to clipboard", error);
+			return false;
+		}
+	}
+
+	public openVerificationUrl(): void {
+		if (!this.deviceAuth?.verification_uri) {
+			pino.warn("No verification URI available");
+			return;
+		}
+
+		window.open(this.deviceAuth.verification_uri, '_blank');
+	}
+
+	async refreshAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
+		await this.dispatch(AuthEvents.ACCESS_TOKEN_EXPIRED);
+		if (!this.settings.refresh_token) {
+			await this.dispatch(AuthEvents.REFRESH_FAILURE);
+			throw new Error("No refresh token available");
+		}
+
+		try {
+			const response = await this.api.fetchRefreshOAuthAccessToken();
+
+			this.settings.access_token = response.access_token;
+			this.settings.refresh_token = response.refresh_token;
+			await this.settings.save();
+			await this.dispatch(AuthEvents.REFRESH_SUCCESS);
+			pino.info("Successfully refreshed OAuth token");
+
+			return {access_token: response.access_token, refresh_token: response.refresh_token};
+		} catch (e) {
+			await this.dispatch(AuthEvents.REFRESH_FAILURE);
+			this.settings.access_token = undefined;
+			this.settings.refresh_token = undefined;
+			await this.settings.save();
+			throw e;
+		}
+	}
+
+	async refreshToken(error: ResponseError | Error) {
+		// If we get a 401, try to refresh the token
+		if ("status" in error && error.status === 401 && this.settings.refresh_token) {
+			pino.warn("Got a 401, refreshing");
+			try {
+				await this.refreshAccessToken();
+				await this.fetchAndSetUser(false);
+			} catch (refreshError) {
+				pino.error(error, "You were unexpectedly logged out, please try to log back in again.");
+				this.settings.refresh_token = undefined;
+				this.settings.access_token = undefined;
+				await this.settings.save();
+				this.user = null;
+				await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
+				throw error;
+			}
+		} else {
+			pino.error("Unexpected server error");
+			throw error;
+		}
+	}
+
+	public async logout(): Promise<void> {
+		this.stopPolling();
+		this.deviceAuth = null;
+		this.settings.access_token = undefined;
+		this.settings.refresh_token = undefined;
+		this.user = null;
+		await this.settings.save();
+		await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
+	}
+
+	isAuthenticated() {
+		return this.getState() === AuthStates.AUTHENTICATED;
+	}
+
+	private async fetchAndSetUser(attemptRefreshOnFailure = true): Promise<void> {
+		try {
+			this.user = await this.api.fetchGetUser();
+			await this.dispatch(AuthEvents.USER_FETCHED);
+		} catch (error) {
+			pino.error(error, "Failed to fetch user data");
+			await this.dispatch(AuthEvents.USER_FETCH_FAILED);
+			if (attemptRefreshOnFailure) {
+				await this.refreshToken(error as Error);
+			}
+		}
+	}
+
 	private async startPolling(): Promise<void> {
 		if (!this.deviceAuth) {
 			pino.error("Cannot start polling: no device auth data");
@@ -261,120 +362,17 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			}
 		};
 
-		// Start the first poll
 		this.scheduleNextPoll(currentInterval, poll);
 	}
+
 	private scheduleNextPoll(interval: number, pollFunction: () => Promise<void>): void {
 		this.pollingTimer = window.setTimeout(pollFunction, interval * 1000);
 	}
 
-	/**
-	 * Stop polling for token
-	 */
 	private stopPolling(): void {
 		if (this.pollingTimer) {
 			clearTimeout(this.pollingTimer);
 			this.pollingTimer = null;
 		}
-	}
-
-	/**
-	 * Cancel the device flow
-	 */
-	public async cancelDeviceFlow(): Promise<void> {
-		this.stopPolling();
-		this.deviceAuth = null;
-		await this.dispatch(AuthEvents.DEVICE_FLOW_CANCELED);
-	}
-
-	/**
-	 * Copy verification code to clipboard
-	 */
-	public async copyUserCodeToClipboard(): Promise<boolean> {
-		if (!this.deviceAuth?.user_code) {
-			return false;
-		}
-
-		try {
-			await navigator.clipboard.writeText(this.deviceAuth.user_code);
-			return true;
-		} catch (error) {
-			pino.warn("Failed to copy to clipboard", error);
-			return false;
-		}
-	}
-
-	/**
-	 * Open verification URL in browser
-	 */
-	public openVerificationUrl(): void {
-		if (!this.deviceAuth?.verification_uri) {
-			pino.warn("No verification URI available");
-			return;
-		}
-
-		window.open(this.deviceAuth.verification_uri, '_blank');
-	}
-
-	async refreshAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
-		await this.dispatch(AuthEvents.ACCESS_TOKEN_EXPIRED);
-		if (!this.settings.refresh_token) {
-			await this.dispatch(AuthEvents.REFRESH_FAILURE);
-			throw new Error("No refresh token available");
-		}
-
-		try {
-			const response = await this.api.fetchRefreshOAuthAccessToken();
-
-			this.settings.access_token = response.access_token;
-			this.settings.refresh_token = response.refresh_token;
-			await this.settings.save();
-			await this.dispatch(AuthEvents.REFRESH_SUCCESS);
-			pino.info("Successfully refreshed OAuth token");
-
-			return {access_token: response.access_token, refresh_token: response.refresh_token};
-		} catch (e) {
-			await this.dispatch(AuthEvents.REFRESH_FAILURE);
-			this.settings.access_token = undefined;
-			this.settings.refresh_token = undefined;
-			await this.settings.save();
-			throw e;
-		}
-	}
-
-	async refreshToken(error: ResponseError | Error) {
-		// If we get a 401, try to refresh the token
-		if ("status" in error && error.status === 401 && this.settings.refresh_token) {
-			pino.warn("Got a 401, refreshing");
-			try {
-				await this.refreshAccessToken();
-				await this.fetchAndSetUser(false);
-			} catch (refreshError) {
-				pino.error(error, "You were unexpectedly logged out, please try to log back in again.");
-				this.settings.refresh_token = undefined;
-				this.settings.access_token = undefined;
-				await this.settings.save();
-				this.user = null;
-				await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
-				throw error;
-			}
-		} else {
-			pino.error("Unexpected server error");
-			throw error;
-		}
-	}
-
-	public async logout(): Promise<void> {
-		this.stopPolling();
-		this.deviceAuth = null;
-		this.settings.access_token = undefined;
-		this.settings.refresh_token = undefined;
-		this.user = null;
-		await this.settings.save();
-		await this.dispatch(AuthEvents.LOGOUT_REQUESTED);
-	}
-
-	isAuthenticated() {
-		return this.getState() === AuthStates.AUTHENTICATED;
 	}
 }
