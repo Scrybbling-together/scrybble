@@ -23,9 +23,6 @@ export class ScrybbleUI extends LitElement {
 	@state()
 	private error: ErrorMessage | null = null;
 
-	@state()
-	private isLoading: boolean = false;
-
 	@property({type: Object, attribute: false})
 	@provide({context: scrybbleContext})
 	private scrybble!: ScrybbleCommon;
