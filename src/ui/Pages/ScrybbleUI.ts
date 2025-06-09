@@ -10,7 +10,6 @@ import {AuthStates} from "../../Authentication";
 
 export enum ScrybbleViewType {
 	FILE_TREE = "file_tree",
-	SYNC_HISTORY = "sync_history",
 	SUPPORT = "support",
 	ACCOUNT = "login",
 	ONBOARDING = "onboarding"
