@@ -11,18 +11,38 @@ import {ScrybbleOnboarding} from "./Pages/OnboardingPage";
 import {addIcon, getIcon} from "obsidian";
 
 export default function loadLitComponents() {
-	window.customElements.define("rm-tree", RmFileTree)
-	window.customElements.define('rm-file', RmFile)
-	window.customElements.define('rm-dir', RmDir)
-	window.customElements.define('scrybble-file-tree', ScrybbleFileTreeComponent)
-	window.customElements.define('error-view', ErrorComponent)
-	window.customElements.define('sync-progress-indicator', SyncProgressIndicator)
+	if (!window.customElements.get("rm-tree")) {
+		window.customElements.define("rm-tree", RmFileTree)
+	}
+	if (!window.customElements.get("rm-file")) {
+		window.customElements.define('rm-file', RmFile)
+	}
+	if (!window.customElements.get("rm-dir")) {
+		window.customElements.define('rm-dir', RmDir)
+	}
+	if (!window.customElements.get("scrybble-file-tree")) {
+		window.customElements.define('scrybble-file-tree', ScrybbleFileTreeComponent)
+	}
+	if (!window.customElements.get("error-view")) {
+		window.customElements.define('error-view', ErrorComponent)
+	}
+	if (!window.customElements.get("sync-progress-indicator")) {
+		window.customElements.define('sync-progress-indicator', SyncProgressIndicator)
+	}
 
 	// pages
-	window.customElements.define("scrybble-ui", ScrybbleUI)
-	window.customElements.define('scrybble-support', SupportPage)
-	window.customElements.define('scrybble-account', AccountPage)
-	window.customElements.define('scrybble-onboarding', ScrybbleOnboarding)
+	if (!window.customElements.get("scrybble-ui")) {
+		window.customElements.define("scrybble-ui", ScrybbleUI)
+	}
+	if (!window.customElements.get("scrybble-support")) {
+		window.customElements.define('scrybble-support', SupportPage)
+	}
+	if (!window.customElements.get("scrybble-account")) {
+		window.customElements.define('scrybble-account', AccountPage)
+	}
+	if (!window.customElements.get("scrybble-onboarding")) {
+		window.customElements.define('scrybble-onboarding', ScrybbleOnboarding)
+	}
 
 	// unsure why this icon is unavailable, it should be available given Obsidian's lucide version
 	if (getIcon('file-x-2') == null) {
