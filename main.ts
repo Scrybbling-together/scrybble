@@ -73,7 +73,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 
 		this.addCommand({
 			id: "open-scrybble-pane",
-			name: "Open the Scrybble UI",
+			name: "Browse your reMarkable files",
 			callback: this.showScrybbleFiletree.bind(this)
 		})
 

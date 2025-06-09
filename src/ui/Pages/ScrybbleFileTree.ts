@@ -38,7 +38,7 @@ export class ScrybbleFileTreeComponent extends LitElement {
 		if (type === "f") {
 			try {
 				// Errors.info(`Downloading file ${obfuscateString(path, 60)}`)
-				await this.scrybble.sync.requestSync(path)
+				this.scrybble.sync.requestSync(path)
 			} catch (e) {
 				// Errors.handle("GENERAL_ERROR", e)
 			}

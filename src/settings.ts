@@ -19,7 +19,21 @@ export class Settings extends PluginSettingTab {
 	display(): void {
 		const {containerEl} = this;
 
-		containerEl.empty();
+		containerEl.empty()
+		containerEl.createEl("h2", {text: "Output"})
+
+		new Setting(containerEl)
+			.setName('Output folder')
+			.setDesc(`Where your reMarkable files will be stored.
+Default is "/scrybble"`)
+			.addText((text) => text
+				.setValue(this.plugin.settings.sync_folder)
+				.setPlaceholder("/scrybble")
+				.onChange(async (value) => {
+					this.plugin.settings.sync_folder = value;
+					await this.plugin.settings.save();
+				}));
+
 		containerEl.createEl("h2", {text: "Scrybble server"})
 
 		new Setting(containerEl)
@@ -33,6 +47,7 @@ export class Settings extends PluginSettingTab {
 						this.updateVisibility();
 					})
 			})
+
 
 		this.endpointSetting = new Setting(containerEl)
 			.setName("Endpoint")
