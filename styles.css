@@ -550,6 +550,8 @@ scrybble-support {
 }
 
 .url-display {
+	user-select: text;
+	--webkit-user-select: text;
 	padding: var(--size-4-2);
 	background: var(--background-primary-alt);
 	border: 1px solid var(--background-modifier-border);

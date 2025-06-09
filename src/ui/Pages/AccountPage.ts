@@ -91,6 +91,7 @@ export class AccountPage extends LitElement {
 					<div>Unknown state: ${this.authState}</div>`;
 		}
 	}
+
 	private async startDeviceFlow(): Promise<void> {
 		pino.info("Starting Device Authorization flow");
 
@@ -162,98 +163,104 @@ export class AccountPage extends LitElement {
 		const isPolling = this.authState === AuthStates.POLLING_FOR_TOKEN;
 
 		return html`
-        <div class="account-card">
-            <div class="device-auth-header">
-                <h2>Complete Authorization</h2>
-                <p>To connect your Scrybble account, follow these steps:</p>
-            </div>
+			<div class="account-card">
+				<div class="device-auth-header">
+					<h2>Complete Authorization</h2>
+					<p>To connect your Scrybble account, follow these steps:</p>
+				</div>
 
-            <div class="device-auth-steps">
-                <div class="step ${isPolling ? 'step-completed' : ''}">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h3>Open the authorization page</h3>
-                        <p>Click the button below to open the authorization page in your browser:</p>
-                        <button 
-                            class="verification-url-button" 
-                            @click="${this.openVerificationUrl}">
-                            <div class="button-icon">${getIcon("external-link")}</div>
-                            <span>Open Authorization Page</span>
-                        </button>
-                        <div class="url-display">
-                            <code>${deviceAuth.verification_uri}</code>
-                        </div>
-                    </div>
-                </div>
+				<div class="device-auth-steps">
+					<div class="step ${isPolling ? 'step-completed' : ''}">
+						<div class="step-number">1</div>
+						<div class="step-content">
+							<h3>Open the authorization page</h3>
+							<p>Click the button below to open the authorization page in your browser:</p>
+							<button
+								class="verification-url-button"
+								@click="${this.openVerificationUrl}">
+								<div class="button-icon">${getIcon("external-link")}</div>
+								<span>Open Authorization Page</span>
+							</button>
+							<div class="url-display">
+								<code>${deviceAuth.verification_uri}</code>
+							</div>
+						</div>
+					</div>
 
-                <div class="step ${isPolling ? 'step-completed' : ''}">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h3>Enter the verification code</h3>
-                        <p>On the authorization page, enter this code:</p>
-                        <div class="code-display">
-                            <div class="user-code">
-                                <code>${deviceAuth.user_code}</code>
-                                <button 
-                                    class="copy-code-button ${this.copySuccess ? 'success' : ''}"
-                                    @click="${this.copyUserCode}"
-                                    title="Copy verification code">
-                                    ${this.copySuccess ?
-			html`<div class="button-icon">${getIcon("check")}</div><span>Copied!</span>` :
-			html`<div class="button-icon">${getIcon("copy")}</div><span>Copy Code</span>`
-		}
-                                </button>
-                            </div>
-                            <p class="code-hint">This code expires in ${Math.floor(deviceAuth.expires_in / 60)} minutes</p>
-                        </div>
-                    </div>
-                </div>
+					<div class="step ${isPolling ? 'step-completed' : ''}">
+						<div class="step-number">2</div>
+						<div class="step-content">
+							<h3>Enter the verification code</h3>
+							<p>On the authorization page, enter this code:</p>
+							<div class="code-display">
+								<div class="user-code">
+									<code>${deviceAuth.user_code}</code>
+									<button
+										class="copy-code-button ${this.copySuccess ? 'success' : ''}"
+										@click="${this.copyUserCode}"
+										title="Copy verification code">
+										${this.copySuccess ?
+											html`
+												<div class="button-icon">${getIcon("check")}</div>
+												<span>Copied!</span>` :
+											html`
+												<div class="button-icon">${getIcon("copy")}</div><span>Copy Code</span>`
+										}
+									</button>
+								</div>
+								<p class="code-hint">This code expires in ${Math.floor(deviceAuth.expires_in / 60)}
+									minutes</p>
+							</div>
+						</div>
+					</div>
 
-                <div class="step ${isPolling ? 'step-active' : ''}">
-                    <div class="step-number">
-                        ${isPolling ? html`<div class="step-spinner">${getIcon("loader-circle")}</div>` : '3'}
-                    </div>
-                    <div class="step-content">
-                        <h3>${isPolling ? 'Waiting for authorization...' : 'Return here'}</h3>
-                        ${isPolling ?
-			html`
-                                <p>Please complete the authorization process in your browser.</p>
-                                <div class="polling-status">
-                                    <p>This window will update automatically once authorization is complete.</p>
-                                </div>
-                            ` :
-			html`<p>After authorizing in your browser, this page will automatically update. Keep this window open!</p>`
-		}
-                    </div>
-                </div>
-            </div>
+					<div class="step ${isPolling ? 'step-active' : ''}">
+						<div class="step-number">
+							${isPolling ? html`
+								<div class="step-spinner">${getIcon("loader-circle")}</div>` : '3'}
+						</div>
+						<div class="step-content">
+							<h3>${isPolling ? 'Waiting for authorization...' : 'Return here'}</h3>
+							${isPolling ?
+								html`
+									<p>Please complete the authorization process in your browser.</p>
+									<div class="polling-status">
+										<p>This window will update automatically once authorization is complete.</p>
+									</div>
+								` :
+								html`<p>After authorizing in your browser, this page will automatically update. Keep
+									this window open!</p>`
+							}
+						</div>
+					</div>
+				</div>
 
-            <div class="device-auth-actions">
-                <button 
-                    class="cancel-button" 
-                    @click="${this.cancelDeviceFlow}">
-                    <div class="button-icon">${getIcon("x")}</div>
-                    <span>Cancel</span>
-                </button>
-            </div>
+				<div class="device-auth-actions">
+					<button
+						class="cancel-button"
+						@click="${this.cancelDeviceFlow}">
+						<div class="button-icon">${getIcon("x")}</div>
+						<span>Cancel</span>
+					</button>
+				</div>
 
-            <div class="device-auth-help">
-                <details>
-                    <summary>Need help?</summary>
-                    <div class="help-content">
-                        <p><strong>The authorization page didn't open?</strong></p>
-                        <p>Manually go to: <code>${deviceAuth.verification_uri}</code></p>
-                        
-                        <p><strong>Having trouble copying the code?</strong></p>
-                        <p>Manually type: <strong>${deviceAuth.user_code}</strong></p>
-                        
-                        <p><strong>Code not working?</strong></p>
-                        <p>Make sure you're logged into the correct Scrybble account in your browser.</p>
-                    </div>
-                </details>
-            </div>
-        </div>
-    `;
+				<div class="device-auth-help">
+					<details>
+						<summary>Need help?</summary>
+						<div class="help-content">
+							<p><strong>The authorization page didn't open?</strong></p>
+							<p>Manually go to: <code>${deviceAuth.verification_uri}</code></p>
+
+							<p><strong>Having trouble copying the code?</strong></p>
+							<p>Manually type: <strong>${deviceAuth.user_code}</strong></p>
+
+							<p><strong>Code not working?</strong></p>
+							<p>Make sure you're logged into the correct Scrybble account in your browser.</p>
+						</div>
+					</details>
+				</div>
+			</div>
+		`;
 	}
 
 	private renderLoginView(): TemplateResult {
@@ -328,7 +335,7 @@ export class AccountPage extends LitElement {
 							</div>
 							<div class="info-value">${this.formatDate(userInfo.user.created_at)}</div>
 						</div>
-						
+
 						<div class="info-item">
 							<div class="info-label">
 								${getIcon("bird")}
@@ -347,11 +354,13 @@ export class AccountPage extends LitElement {
 								</span>
 							</div>
 							${userInfo.subscription_status?.lifetime ?
-								html`<div class="info-value subscription-status-lifetime">Lifetime license!</div>` :
-								html`<div
-									class="info-value ${userInfo.subscription_status?.exists ? "subscription-status-active" : "subscription-status-inactive"}">
-									${userInfo.subscription_status?.exists ? html`Active` : html`No active license`}
-								</div>`
+								html`
+									<div class="info-value subscription-status-lifetime">Lifetime license!</div>` :
+								html`
+									<div
+										class="info-value ${userInfo.subscription_status?.exists ? "subscription-status-active" : "subscription-status-inactive"}">
+										${userInfo.subscription_status?.exists ? html`Active` : html`No active license`}
+									</div>`
 							}
 						</div>
 					</div>
