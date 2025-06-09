@@ -8,7 +8,7 @@ All typed text on your device, along with all the passages you highlight while r
 
 All of these are neatly organized per page.
 
-Perfect for people with a [Type Folio](https://remarkable.com/products/remarkable-paper/pro/type-folio)
+Perfect if you have a [Type Folio](https://remarkable.com/products/remarkable-paper/pro/type-folio)
 
 ![A markdown page for the eBook "Docs for developers", showing quotes about the importance of documentation](img/highlights.png)
 
