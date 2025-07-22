@@ -5,14 +5,12 @@ import {
 	DeviceTokenResponse,
 	FeedbackFormDetails,
 	OneTimeCodeResponse,
-	PaginatedResponse,
 	RMFileTree,
 	ScrybbleApi,
 	ScrybblePersistentStorage,
 	ScrybbleSettings,
 	ScrybbleUser,
 	SyncDelta,
-	SyncFile
 } from "./@types/scrybble";
 import {Settings} from "./src/settings";
 import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";

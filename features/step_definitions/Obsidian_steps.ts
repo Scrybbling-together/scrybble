@@ -7,6 +7,5 @@ Given("The Scrybble folder is configured to be {string}", function (this: Obsidi
 });
 Given("There is a file called {string} in the {string} folder", function (this: ObsidianWorld, filename: string, folder: string) {
 	const filename1 = path.join(folder, filename);
-	console.log(`Adding ${filename1}`);
 	this.addObsidianFile(filename1, "a file");
 });
