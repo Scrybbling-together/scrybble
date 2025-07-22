@@ -11,8 +11,9 @@ export class ErrorComponent extends LitElement {
 	public actions: TemplateResult[] = [];
 
 	public render() {
-		const errorActions = this.actions.length ? html`<div class="error-actions">${this.actions}</div>` : nothing
-		return html`
+		if (this.error) {
+			const errorActions = this.actions.length ? html`<div class="error-actions">${this.actions}</div>` : nothing
+			return html`
 			<div class="error-container">
 				<div class="error-content">
 					<h2 class="error-title">${this.error.title}</h2>
@@ -22,6 +23,7 @@ export class ErrorComponent extends LitElement {
 				${errorActions}
 			</div>
 		`
+		}
 	}
 
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
