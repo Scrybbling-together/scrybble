@@ -7,6 +7,7 @@ import {consume} from "@lit/context";
 import {scrybbleContext} from "../scrybbleContext";
 import {ScrybbleCommon, SyncFile} from "../../../@types/scrybble";
 import {SyncJobStates} from "../../SyncJob";
+import path from "node:path";
 
 export class RmFile extends LitElement {
 	@consume({context: scrybbleContext})
@@ -185,10 +186,11 @@ Click to download file to your vault`}">
 		// 2. The sanitized filename
 		// 3. Adding .pdf/.md extension
 		const sanitizedName = sanitizeFilename(this.file.path.substring(1, this.file.path.length), true);
+
 		const rootFolder = this.scrybble.settings.sync_folder;
 
-		const pdfPath = rootFolder ? `${rootFolder}/${sanitizedName}.pdf` : `${sanitizedName}.pdf`;
-		const mdPath = rootFolder ? `${rootFolder}/${sanitizedName}.md` : `${sanitizedName}.md`;
+		const pdfPath = path.join(rootFolder, `${sanitizedName}.pdf`);
+		const mdPath = path.join(rootFolder, `${sanitizedName}.md`);
 
 		const pdf = this.scrybble.fileNavigator.getFileByPath(pdfPath);
 		const md = this.scrybble.fileNavigator.getFileByPath(mdPath);

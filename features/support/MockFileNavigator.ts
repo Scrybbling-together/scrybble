@@ -1,11 +1,11 @@
 import {ContextMenuItem, FileNavigator} from "../../@types/scrybble";
+import path from "node:path";
 
 export class MockFileNavigator implements FileNavigator {
 	public openedFiles: Array<{ path: string, method: string }> = [];
 	public lastContextMenu: ContextMenuItem[] | null = null;
 	private files: Map<string, any> = new Map();
 
-	// Test helper to set up mock files
 	setMockFile(path: string, file: any): void {
 		this.files.set(path, file);
 	}
@@ -22,8 +22,12 @@ export class MockFileNavigator implements FileNavigator {
 		this.openedFiles.push({path: filePath, method: 'horizontalSplit'});
 	}
 
-	getFileByPath(path: string): any | null {
-		return this.files.get(path) || null;
+	getFileByPath(requestedPath: string): any | null {
+		for (let existingPath of this.files.keys()) {
+			if (path.relative(requestedPath, existingPath) === "") {
+				return this.files.get(requestedPath);
+			}
+		}
 	}
 
 	showContextMenu(event: MouseEvent, items: ContextMenuItem[]): void {

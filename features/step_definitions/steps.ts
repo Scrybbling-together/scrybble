@@ -4,6 +4,7 @@ import {html, render} from "lit-html";
 import {expect} from "chai";
 import loadLitComponents from "../../src/ui/loadComponents";
 import {ObsidianWorld} from "../support/ObsidianWorld";
+import {HTMLSpanElement} from "happy-dom";
 
 loadLitComponents();
 
@@ -40,4 +41,23 @@ Then("The interface should say {string}", async function (text) {
 When("The plugin initializes", async function (this: ObsidianWorld) {
 	console.log("Initializing plugin");
 	await this.authentication.initializeAuth();
+});
+
+function findFileByNameInReMarkableFiletree(world: ObsidianWorld, name: string) {
+	const files = Array.from(world.container!.querySelectorAll("rm-file"));
+	const ts = files.filter(node => ((node.querySelector(".filename") as unknown) as HTMLElement).innerText === name);
+	return ts[0];
+}
+
+Then("The {string} link for {string} is {string}", function (this: ObsidianWorld, pdfOrMD: string, filename: string, className: string) {
+	if (!["pdf", "md"].includes(pdfOrMD)) {
+		throw new Error("The first parameter to this Then should be `pdf` or `md` and nothing else");
+	}
+	if (!["available", "unavailable"].includes(className)) {
+		throw new Error("The third parameter to this Then should be `available` or `unavailable` and nothing else");
+	}
+	const requestedFile = findFileByNameInReMarkableFiletree(this, filename);
+
+	const button: HTMLSpanElement = (requestedFile.querySelector(`.${pdfOrMD}`) as unknown) as HTMLSpanElement;
+	expect(Array.from(button.classList)).to.contain(className);
 });

@@ -24,20 +24,6 @@ Given("The reMarkable has a file called {string} in the {string} folder", functi
 		name
 	})
 });
-Then("The PDF link for {string} is greyed out", function (this: ObsidianWorld, name: string) {
-	const files = Array.from(this.container!.querySelectorAll("rm-file"));
-	const requestedFile = files.filter(node => ((node.querySelector(".filename") as unknown) as HTMLElement).innerText === name)[0];
-
-	const pdfButton: HTMLSpanElement = (requestedFile.querySelector(".pdf") as unknown) as HTMLSpanElement;
-	expect(Array.from(pdfButton.classList)).to.contain("unavailable");
-});
-Then("The MD link for {string} is greyed out", function (this: ObsidianWorld, name: string) {
-	const files = Array.from(this.container!.querySelectorAll("rm-file"));
-	const requestedFile = files.filter(node => ((node.querySelector(".filename") as unknown) as HTMLElement).innerText === name)[0];
-
-	const mdButton: HTMLSpanElement = (requestedFile.querySelector("span.md") as unknown) as HTMLSpanElement;
-	expect(Array.from(mdButton.classList)).to.contain("unavailable");
-});
 
 let id = 0;
 Given("The file {string} in the folder {string} has been downloaded {string}", function (this: ObsidianWorld, name, path, when) {

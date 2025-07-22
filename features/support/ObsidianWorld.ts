@@ -1,4 +1,4 @@
-import {Before, IWorldOptions, World} from "@cucumber/cucumber";
+import {IWorldOptions, World} from "@cucumber/cucumber";
 import {ScrybbleCommon} from "../../@types/scrybble";
 import {MockScrybbleApi} from "./MockScrybbleApi";
 import sinon, {SinonSpy} from "sinon";
@@ -11,6 +11,7 @@ export class ObsidianWorld extends World {
 	public container: HTMLDivElement | null;
 	public api: MockScrybbleApi;
 	public authentication: Authentication;
+	private readonly fileNavigator: MockFileNavigator;
 
 	public spies: {
 		initiateDeviceFlow: SinonSpy;
@@ -43,6 +44,7 @@ export class ObsidianWorld extends World {
 		this.api = new MockScrybbleApi(settings);
 
 		this.authentication = new Authentication(settings, this.api);
+		this.fileNavigator = new MockFileNavigator();
 		this.scrybble = {
 			api: this.api,
 			sync: {
@@ -55,7 +57,7 @@ export class ObsidianWorld extends World {
 			},
 			settings,
 			authentication: this.authentication,
-			fileNavigator: new MockFileNavigator(),
+			fileNavigator: this.fileNavigator,
 			meta: {
 				scrybbleVersion: "dev",
 				obsidianVersion: "unknown",
@@ -95,6 +97,10 @@ export class ObsidianWorld extends World {
 		this.scrybble.settings.access_token = undefined;
 		this.scrybble.settings.refresh_token = undefined;
 		this.api.isNotLoggedIn();
+	}
+
+	addObsidianFile(filename: string, folder: string) {
+		this.fileNavigator.setMockFile(filename, folder);
 	}
 
 	[key: string]: any;
