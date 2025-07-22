@@ -98,15 +98,13 @@ type SyncStateError = {
 	completed: false;
 }
 
-type SyncStateResponse = {
+export type SyncStateResponse = {
 	id: number;
 	filename: string;
 } & (SyncStateSuccess | SyncStateError);
 
 export interface ScrybbleApi {
 	fetchSyncDelta(): Promise<ReadonlyArray<SyncDelta>>;
-
-	fetchPaginatedSyncHistory(page: number): Promise<PaginatedResponse<SyncFile>>;
 
 	fetchFileTree(path: string): Promise<RMFileTree>;
 

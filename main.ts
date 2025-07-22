@@ -137,17 +137,6 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return response.json
 	}
 
-	async fetchPaginatedSyncHistory(page: number = 1): Promise<PaginatedResponse<SyncFile>> {
-		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/inspect-sync?paginated=true&page=${page}`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json"
-			}
-		});
-
-		return response.json;
-	}
-
 	async fetchFileTree(path: string = "/"): Promise<RMFileTree> {
 		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/RMFileTree`, {
 			method: "POST",
@@ -282,7 +271,8 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({license})
+			body: JSON.stringify({license}),
+			throw: false
 		});
 
 		return response.json;

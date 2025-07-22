@@ -5,8 +5,8 @@ import {
 	DeviceTokenResponse,
 	FeedbackFormDetails,
 	OneTimeCodeResponse,
-	PaginatedResponse,
 	RMFileTree,
+	RMTreeItem,
 	ScrybbleApi,
 	ScrybbleSettings,
 	ScrybbleUser,
@@ -70,18 +70,6 @@ export class MockScrybbleApi implements ScrybbleApi {
 	fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready"> {
 		this.throwIfErrorIsConfigured("fetchOnboardingState");
 		return Promise.resolve("ready");
-	}
-
-	fetchPaginatedSyncHistory(page: number): Promise<PaginatedResponse<SyncFile>> {
-		this.throwIfErrorIsConfigured("fetchPaginatedSyncHistory");
-		const t: PaginatedResponse<SyncFile> = {
-			data: [],
-			current_page: 0,
-			last_page: 0,
-			per_page: 0,
-			total: 0
-		}
-		return Promise.resolve(t);
 	}
 
 	fetchRequestFileToBeSynced(filePath: string): Promise<{ sync_id: number; filename: string }> {
