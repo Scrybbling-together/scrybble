@@ -7,6 +7,10 @@ export class MockFileNavigator implements FileNavigator {
 	private files: Map<string, any> = new Map();
 
 	setMockFile(path: string, file: any): void {
+		if (path.startsWith("/")) {
+			path = path.replace(/^\//, "");
+		}
+
 		this.files.set(path, file);
 	}
 
@@ -23,6 +27,12 @@ export class MockFileNavigator implements FileNavigator {
 	}
 
 	getFileByPath(requestedPath: string): any | null {
+		const dirname = path.dirname(requestedPath);
+		// Obsidian always returns null for absolute paths
+		if (path.isAbsolute(dirname)) {
+			console.log(`absolute path ${requestedPath}!`)
+			return null;
+		}
 		for (let existingPath of this.files.keys()) {
 			if (path.relative(requestedPath, existingPath) === "") {
 				return this.files.get(requestedPath);

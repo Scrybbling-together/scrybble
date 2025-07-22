@@ -25,10 +25,10 @@ export class Settings extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Output folder')
 			.setDesc(`Where your reMarkable files will be stored.
-Default is "/scrybble"`)
+Default is "scrybble/"`)
 			.addText((text) => text
 				.setValue(this.plugin.settings.sync_folder)
-				.setPlaceholder("/scrybble")
+				.setPlaceholder("scrybble/")
 				.onChange(async (value) => {
 					this.plugin.settings.sync_folder = value;
 					await this.plugin.settings.save();

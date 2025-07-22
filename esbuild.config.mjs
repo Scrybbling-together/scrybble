@@ -41,6 +41,7 @@ const options = {
 		'@codemirror/text',
 		'@codemirror/tooltip',
 		'@codemirror/view',
+		'node:path',
 		...builtins],
 	format: 'cjs',
 	target: "ES2021",

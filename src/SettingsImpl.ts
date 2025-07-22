@@ -15,7 +15,7 @@ export class SettingsImpl implements ScrybbleSettings {
 	public readonly save: () => Promise<void>;
 
 	public constructor(s: Omit<ScrybbleSettings, "endpoint" | "save" | "client_id" | "client_secret"> | null, saveSettings: () => Promise<void>) {
-		this.sync_folder = s?.sync_folder ?? "scrybble";
+		this.sync_folder = s?.sync_folder ?? "scrybble/";
 		this.sync_state = s?.sync_state ?? {};
 		this.self_hosted = s?.self_hosted ?? false;
 		if (s?.custom_host) {

@@ -187,7 +187,10 @@ Click to download file to your vault`}">
 		// 3. Adding .pdf/.md extension
 		const sanitizedName = sanitizeFilename(this.file.path.substring(1, this.file.path.length), true);
 
-		const rootFolder = this.scrybble.settings.sync_folder;
+		let rootFolder = this.scrybble.settings.sync_folder;
+		if (path.isAbsolute(rootFolder)) {
+			rootFolder = rootFolder.replace(/^\//, "");
+		}
 
 		const pdfPath = path.join(rootFolder, `${sanitizedName}.pdf`);
 		const mdPath = path.join(rootFolder, `${sanitizedName}.md`);
