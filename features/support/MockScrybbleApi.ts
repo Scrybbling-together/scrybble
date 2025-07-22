@@ -23,6 +23,13 @@ export class MockScrybbleApi implements ScrybbleApi {
 
 	private pollingState: DeviceFlowError | "authenticated" = "authorization_pending";
 
+	private currentDirectory = "/";
+	private directories: string[][] = [["/"]];
+	private files: RMTreeItem[] = [];
+
+	private syncHistory: SyncFile[] = [];
+	private _id = 0;
+
 	constructor(private settings: ScrybbleSettings) {
 	}
 
@@ -60,11 +67,30 @@ export class MockScrybbleApi implements ScrybbleApi {
 
 	async fetchFileTree(path: string): Promise<RMFileTree> {
 		this.throwIfErrorIsConfigured("fetchFileTree");
+		const directories: RMTreeItem[] = this.directories.map((breadcrumbs) => ({
+			name: breadcrumbs.join("/"),
+			path: breadcrumbs.join("/"),
+			type: "d"
+		}))
+		const files = this.files.filter((file) => file.path === this.currentDirectory).map((file) => {
+			const f = this.syncHistory.find((s) => s.name.endsWith(file.name)) ?? file;
+			const parts = f.name.split("/");
+			return {
+				...f,
+				name: parts[parts.length - 1],
+			}
+		});
 		const tree: RMFileTree = {
-			items: [],
-			cwd: "/"
+			// TODO: directories need special logic
+			// TODO: files need to be filtered based on current directory
+			items: files,
+			cwd: this.currentDirectory
 		}
 		return Promise.resolve(tree);
+	}
+
+	addFile(file: RMTreeItem) {
+		this.files.push(file);
 	}
 
 	fetchOnboardingState(): Promise<"unauthenticated" | "setup-gumroad" | "setup-one-time-code" | "setup-one-time-code-again" | "ready"> {
@@ -127,15 +153,6 @@ export class MockScrybbleApi implements ScrybbleApi {
 		);
 	}
 
-	private throwIfErrorIsConfigured(requestName: string) {
-		if (!this.serverReachable) {
-			throw new Error("ERR_CONNECTION_REFUSED");
-		}
-		if (requestName in this.errors) {
-			throw new Error(`Request failed, status ${this.errors[requestName]}`);
-		}
-	}
-
 	fetchRefreshOAuthAccessToken(): Promise<{ access_token: string; refresh_token: string }> {
 		this.throwIfErrorIsConfigured("fetchRefreshOAuthAccessToken");
 		this.settings.access_token = "new_test_access_token";
@@ -191,5 +208,29 @@ export class MockScrybbleApi implements ScrybbleApi {
 
 	fetchGiveFeedback(details: FeedbackFormDetails): Promise<void> {
 		return Promise.resolve();
+	}
+
+	add_synced_file(filename: string, created_at: string) {
+		this.syncHistory.push({
+			name: filename,
+			path: filename,
+			type: "f",
+			sync: {
+				created_at,
+				id: this._id,
+				completed: true,
+				error: false
+			}
+		})
+		this._id += 1;
+	}
+
+	private throwIfErrorIsConfigured(requestName: string) {
+		if (!this.serverReachable) {
+			throw new Error("ERR_CONNECTION_REFUSED");
+		}
+		if (requestName in this.errors) {
+			throw new Error(`Request failed, status ${this.errors[requestName]}`);
+		}
 	}
 }

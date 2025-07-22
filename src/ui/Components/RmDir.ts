@@ -9,8 +9,7 @@ export class RmDir extends LitElement {
 
 
 	render(): TemplateResult {
-		return html`
-			<div class="tree-item" @click="${this._handleClick}" aria-label="Open folder">
+		return html` <div class="tree-item" @click="${this._handleClick}" aria-label="Open folder">
 				<div class="tree-item-self is-clickable">
 					<span class="tree-item-icon">${getIcon('folder')}</span> ${this.directory.name}
 				</div>

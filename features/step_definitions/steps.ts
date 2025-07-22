@@ -1,5 +1,5 @@
 import "../support/MockObsidian"
-import {Given, Then, When} from "@cucumber/cucumber";
+import {Then, When} from "@cucumber/cucumber";
 import {html, render} from "lit-html";
 import {expect} from "chai";
 import loadLitComponents from "../../src/ui/loadComponents";
@@ -35,7 +35,7 @@ When("The user clicks on the {string} button", async function (this: ObsidianWor
 
 Then("The interface should say {string}", async function (text) {
 	await new Promise(resolve => setTimeout(resolve, 100));
-	expect(this.container.innerText, this.container.innerText).to.include(text);
+	expect(this.container.innerText).to.include(text);
 });
 When("The plugin initializes", async function (this: ObsidianWorld) {
 	console.log("Initializing plugin");

@@ -4,7 +4,6 @@ import {html, render} from "lit-html";
 import {ScrybbleViewType} from "./ui/Pages/ScrybbleUI";
 import {ObsidianFileNavigator} from "./FileNavigator";
 import {ScrybbleCommon} from "../@types/scrybble";
-import {Authentication} from "./Authentication";
 import {FileSyncFeedbackModal} from "./ui/Components/FileSyncFeedbackModal";
 
 export const SCRYBBLE_VIEW = "SCRYBBLE_VIEW";
