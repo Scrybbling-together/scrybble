@@ -54,7 +54,8 @@ let ctx = await esbuild.context(options).catch(() => process.exit(1));
 
 if (prod) {
 	console.log("Release mode: Building for release")
-	esbuild.build(options)
+	await esbuild.build(options)
+	await ctx.dispose()
 } else {
 	console.log("Development mode: Watching for changes")
 	await ctx.watch({
