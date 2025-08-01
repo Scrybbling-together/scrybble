@@ -20,7 +20,9 @@ export enum SyncJobStates {
 	// a download request is in-flight
 	downloading = "DOWNLOADING",
 	// the file has been downloaded
-	downloaded = "DOWNLOADED"
+	downloaded = "DOWNLOADED",
+	// tried to download and put in the vault, but failed
+	failed_to_download = "FAILED_TO_DOWNLOAD"
 }
 
 export enum SyncJobEvents {
@@ -30,9 +32,10 @@ export enum SyncJobEvents {
 	stillProcessing = "STILL_PROCESSING",
 	ready = "READY",
 	downloadRequestSent = "DOWNLOAD_REQUEST_SENT",
+	downloadFailed = "DOWNLOAD_FAILED",
 	failedToProcess = "FAILED_TO_PROCESS",
 	downloaded = "DOWNLOADED",
-	errorReceived = "ERROR_RECEIVED"
+	errorReceived = "ERROR_RECEIVED",
 }
 
 export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
@@ -96,6 +99,10 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 				this.onStateChange(this.filename, SyncJobStates.downloading, this);
 				notice.updateState(SyncJobStates.downloading);
 			}),
+			t(SyncJobStates.downloading, SyncJobEvents.downloadFailed, SyncJobStates.downloaded, () => {
+				this.onStateChange(this.filename, SyncJobStates.failed_to_download, this);
+				notice.updateState(SyncJobStates.failed_to_download);
+			}),
 			t(SyncJobStates.downloading, SyncJobEvents.downloaded, SyncJobStates.downloaded, () => {
 				this.onStateChange(this.filename, SyncJobStates.downloaded, this);
 				notice.updateState(SyncJobStates.downloaded);
@@ -137,5 +144,9 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 
 	async processingFailed() {
 		await this.dispatch(SyncJobEvents.failedToProcess);
+	}
+
+	async downloadingFailed() {
+		await this.dispatch(SyncJobEvents.downloadFailed)
 	}
 }

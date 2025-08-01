@@ -1,11 +1,10 @@
 import {SyncJob, SyncJobStates} from "./SyncJob";
-import {ResponseError} from "./errorHandling/Errors";
+import {Errors, ResponseError} from "./errorHandling/Errors";
 import {basename, dirPath, sanitizeFilename} from "./support";
 import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
 import * as jszip from "jszip";
 import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
 import path from "node:path";
-import {folder} from "jszip";
 
 export interface ISyncQueue {
 	requestSync(filename: string): void;
@@ -95,14 +94,14 @@ export class SyncQueue implements ISyncQueue {
 		const folderPath = await this.ensureFolderExists(this.vault, relativePath, this.settings.sync_folder)
 		const out_path = path.join(folderPath, nameOfFile);
 
-		this.onStartDownloadFile(job)
-		await job.startDownload()
-		const response = await requestUrl({
-			method: "GET",
-			url: job.download_url!
-		})
-
 		try {
+			this.onStartDownloadFile(job)
+			await job.startDownload()
+			const response = await requestUrl({
+				method: "GET",
+				url: job.download_url!
+			})
+
 			const zip = await jszip.loadAsync(response.arrayBuffer)
 			// @ts-expect-error TS2345
 			await this.zippedFileToVault(this.vault, zip, /_remarks(-only)?.pdf/, `${out_path}.pdf`)
@@ -112,6 +111,8 @@ export class SyncQueue implements ISyncQueue {
 			this.onFinishedDownloadFile(job, true)
 		} catch (e) {
 			this.onFinishedDownloadFile(job, false, e as Error)
+			Errors.handle("FILE_DOWNLOAD_ERROR", e as Error)
+			await job.downloadingFailed()
 		}
 	}
 
@@ -181,7 +182,7 @@ export class SyncQueue implements ISyncQueue {
 		const state = await this.api.fetchSyncState(job.sync_id!)
 		if (state.completed) {
 			await job.readyToDownload(state.download_url, state.id)
-		} else if(state.error) {
+		} else if (state.error) {
 			await job.processingFailed()
 		} else {
 			await job.fileStillProcessing()

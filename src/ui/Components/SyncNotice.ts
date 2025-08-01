@@ -1,5 +1,5 @@
 import {html, LitElement} from 'lit-element';
-import { property} from 'lit-element/decorators.js';
+import {property} from 'lit-element/decorators.js';
 import {SyncJobStates} from "../../SyncJob";
 import {Notice} from "obsidian";
 import {render} from "lit-html";
@@ -66,6 +66,8 @@ export class SyncProgressIndicator extends LitElement {
 					return 'Downloading';
 				if (this.state === SyncJobStates.downloaded)
 					return 'Downloaded';
+				if (this.state === SyncJobStates.failed_to_download)
+					return 'Failed to download';
 				return 'Download';
 		}
 	}
@@ -93,7 +95,7 @@ export class SyncProgressIndicator extends LitElement {
 
 			case 'download':
 				if (this.state === SyncJobStates.downloading) return 'stage-waiting';
-				// if (this.state === States.failed_to_download) return 'stage-error';
+				if (this.state === SyncJobStates.failed_to_download) return 'stage-error';
 				if (this.state === SyncJobStates.downloaded) return 'stage-completed';
 				return '';
 		}
@@ -137,7 +139,7 @@ export class SyncProgressNotice {
 			}, 2000);
 		}
 
-		if (newState === SyncJobStates.failed_to_process) {
+		if (newState === SyncJobStates.failed_to_process || newState === SyncJobStates.failed_to_download) {
 			setTimeout(() => {
 				this.notice.hide();
 			}, 5000);
