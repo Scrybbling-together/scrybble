@@ -37,10 +37,9 @@ export class ScrybbleFileTreeComponent extends LitElement {
 	async handleClickFileOrFolder({detail: {path, type}}: any) {
 		if (type === "f") {
 			try {
-				// Errors.info(`Downloading file ${obfuscateString(path, 60)}`)
 				this.scrybble.sync.requestSync(path)
 			} catch (e) {
-				// Errors.handle("GENERAL_ERROR", e)
+				Errors.handle("REQUEST_FILE_SYNC_ERROR", e)
 			}
 		} else if (type === "d") {
 			this.cwd = path;

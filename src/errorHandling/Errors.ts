@@ -87,6 +87,13 @@ const errors = {
 		details: e
 	}),
 
+	"REQUEST_FILE_SYNC_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Failed to request sync for a file`,
+		message: html`There is likely a problem with the server.`,
+		helpAction: html`Please try again in a minute or so. ${PERSISTENT_PROBLEM_MESSAGE}`,
+		details: e
+	}),
+
 	"GENERAL_ERROR": (e?: Error | ResponseError) => ({
 		title: html`Something went wrong`,
 		message: html`An unexpected error occurred${formatError(e)}`,

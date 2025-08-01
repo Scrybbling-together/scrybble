@@ -97,26 +97,20 @@ export class SyncQueue implements ISyncQueue {
 
 		this.onStartDownloadFile(job)
 		await job.startDownload()
-		console.log(`Starting download ${job.filename}`)
 		const response = await requestUrl({
 			method: "GET",
 			url: job.download_url!
 		})
-		console.log(`got download info`, response)
-		console.log(`${folderPath}${nameOfFile}.pdf`)
 
 		try {
-			console.log("Opening zip")
 			const zip = await jszip.loadAsync(response.arrayBuffer)
 			// @ts-expect-error TS2345
 			await this.zippedFileToVault(this.vault, zip, /_remarks(-only)?.pdf/, `${out_path}.pdf`)
 			// @ts-expect-error TS2345
 			await this.zippedFileToVault(this.vault, zip, /_obsidian.md/, `${out_path}.md`, false)
-			console.log("processed file")
 			await job.downloaded()
 			this.onFinishedDownloadFile(job, true)
 		} catch (e) {
-			console.log("Error with processing file", e)
 			this.onFinishedDownloadFile(job, false, e as Error)
 		}
 	}
