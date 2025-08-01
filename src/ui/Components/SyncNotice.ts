@@ -35,10 +35,6 @@ export class SyncProgressIndicator extends LitElement {
 		</div>`;
 	}
 
-	isRequestSyncCompleted() {
-		return this.getStageClass('sync') === 'stage-completed';
-	}
-
 	getStageLabel(stage: 'sync' | 'process' | 'download'): string {
 		switch (stage) {
 			case 'sync':
