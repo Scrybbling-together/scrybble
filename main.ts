@@ -115,11 +115,21 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		const latestSyncState = await this.fetchSyncDelta()
 		const settings = this.settings
 
+		console.log(latestSyncState)
+		console.log(settings)
 		for (const {filename, id, download_url} of latestSyncState) {
 			// there is an update to a file iff
 			// 1. it is not in the sync state OR
 			// 2. the id remote is higher than the id locally
-			if (!(filename in settings.sync_state) || settings.sync_state[filename] < id) {
+			const file_not_synced_locally = !(filename in settings.sync_state);
+			const file_has_update = settings.sync_state[filename] < id;
+			if (file_not_synced_locally || file_has_update) {
+				console.log(`File ${filename}#${id} needs to be synced.`);
+				console.log(`Do we have it locally? ${!file_not_synced_locally}`);
+				if (file_has_update) {
+					console.log(`The old file version was ${settings.sync_state[filename]}, and the new one is ${id}`);
+				}
+
 				await this.syncQueue.downloadProcessedFile(filename, download_url, id)
 			}
 		}

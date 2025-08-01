@@ -278,25 +278,21 @@ rm-tree {
 
 	& .stage-label {
 		font-weight: var(--font-medium);
-		color: var(--text-normal);
 	}
 
 	& .stage-waiting .stage-indicator {
 		background-color: var(--background-secondary);
 		border-color: color-mix(in oklab, var(--background-secondary) 70%, black 30%);
-		color: var(--text-normal);
 	}
 
 	& .stage-completed .stage-indicator {
 		background-color: var(--background-modifier-success);
 		border-color: color-mix(in oklab, var(--background-modifier-success) 70%, black 30%);
-		color: var(--text-normal);
 	}
 
 	& .stage-error .stage-indicator {
 		background-color: var(--background-modifier-error);
 		border-color: color-mix(in oklab, var(--background-modifier-error) 70%, black 30%);
-		color: var(--text-normal);
 	}
 }
 

@@ -4,6 +4,8 @@ import {basename, dirPath, sanitizeFilename} from "./support";
 import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
 import * as jszip from "jszip";
 import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
+import path from "node:path";
+import {folder} from "jszip";
 
 export interface ISyncQueue {
 	requestSync(filename: string): void;
@@ -91,23 +93,30 @@ export class SyncQueue implements ISyncQueue {
 		let relativePath = dirPath(job.filename)
 		let nameOfFile = sanitizeFilename(basename(job.filename))
 		const folderPath = await this.ensureFolderExists(this.vault, relativePath, this.settings.sync_folder)
+		const out_path = path.join(folderPath, nameOfFile);
 
 		this.onStartDownloadFile(job)
 		await job.startDownload()
+		console.log(`Starting download ${job.filename}`)
 		const response = await requestUrl({
 			method: "GET",
 			url: job.download_url!
 		})
+		console.log(`got download info`, response)
+		console.log(`${folderPath}${nameOfFile}.pdf`)
 
 		try {
+			console.log("Opening zip")
 			const zip = await jszip.loadAsync(response.arrayBuffer)
 			// @ts-expect-error TS2345
-			await this.zippedFileToVault(this.vault, zip, /_remarks(-only)?.pdf/, `${folderPath}${nameOfFile}.pdf`)
+			await this.zippedFileToVault(this.vault, zip, /_remarks(-only)?.pdf/, `${out_path}.pdf`)
 			// @ts-expect-error TS2345
-			await this.zippedFileToVault(this.vault, zip, /_obsidian.md/, `${folderPath}${nameOfFile}.md`, false)
+			await this.zippedFileToVault(this.vault, zip, /_obsidian.md/, `${out_path}.md`, false)
+			console.log("processed file")
 			await job.downloaded()
 			this.onFinishedDownloadFile(job, true)
 		} catch (e) {
+			console.log("Error with processing file", e)
 			this.onFinishedDownloadFile(job, false, e as Error)
 		}
 	}
@@ -146,15 +155,19 @@ export class SyncQueue implements ISyncQueue {
 	}
 
 	private async zippedFileToVault(vault: App["vault"], zip: jszip, nameMatch: RegExp, vaultFileName: string, required = true) {
+		let data;
 		try {
-			const data = await zip.file(nameMatch)[0].async("arraybuffer")
-			await this.writeToFile(vault, vaultFileName, data)
+			data = await zip.file(nameMatch)[0].async("arraybuffer")
 		} catch (e) {
 			if (required) {
 				throw new Error("Scrybble: Missing file in downloaded sync zip, reference = 106")
-			} else {
-				return;
 			}
+			return
+		}
+		try {
+			await this.writeToFile(vault, vaultFileName, data)
+		} catch (e) {
+			throw new Error(`Scrybble: Failed to place file "${vaultFileName}" in the right location, reference = 107`);
 		}
 	}
 
