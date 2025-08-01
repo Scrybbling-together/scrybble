@@ -39,7 +39,7 @@ export class ScrybbleFileTreeComponent extends LitElement {
 			try {
 				this.scrybble.sync.requestSync(path)
 			} catch (e) {
-				Errors.handle("REQUEST_FILE_SYNC_ERROR", e)
+				Errors.handle("REQUEST_FILE_SYNC_ERROR", e as Error)
 			}
 		} else if (type === "d") {
 			this.cwd = path;
