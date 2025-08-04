@@ -91,7 +91,7 @@ export class SyncQueue implements ISyncQueue {
 		return this.syncJobs.filter((job: SyncJob) => this.busyStates.contains(job.getState())).length
 	}
 
-	public async download(job: SyncJob): Promise<ArrayBuffer | null> {
+	public async download(job: SyncJob): Promise<ArrayBuffer | undefined> {
 		try {
 			this.onStartDownloadFile(job)
 			await job.startDownload()
@@ -202,5 +202,3 @@ export class SyncQueue implements ISyncQueue {
 		}
 	}
 }
-
-window.SyncQueue = SyncQueue;

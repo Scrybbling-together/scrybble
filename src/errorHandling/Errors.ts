@@ -127,6 +127,7 @@ export class Errors {
 		pino.error(`Scrybble ${error_name} occurred.`)
 		if (e == null) {
 			pino.error("The supplied error object is empty.");
+			e = new Error("The supplied error object is empty.")
 		} else {
 			pino.error(e);
 		}
