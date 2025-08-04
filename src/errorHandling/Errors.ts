@@ -38,6 +38,19 @@ const errors = {
 		helpAction: html`...`
 	}),
 
+	"ZIP_EXTRACT_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Unable to extract the downloaded files`,
+		message: html`Your file is likely corrupted.`,
+		helpAction: html`Contact support for further guidance, ${SUPPORT_EMAIL}`,
+		details: e
+	}),
+
+	"UNABLE_TO_CREATE_FOLDER": (e?: Error | ResponseError) => ({
+		title: html`Unable to create folder`,
+		message: html`Does your folder contain unsupported characters?`,
+		helpAction: html`Contact support for further guidance, ${SUPPORT_EMAIL}`,
+	}),
+
 	"TREE_LOADING_ERROR": (e?: Error | ResponseError) => ({
 		title: html`File loading error`,
 		message: html`There's a problem loading your files${formatError(e)}`,
@@ -110,9 +123,13 @@ const errors = {
 } satisfies Record<string, ErrorHandler>;
 
 export class Errors {
-	public static handle(error_name: keyof typeof errors, e?: Error) {
+	public static handle(error_name: keyof typeof errors, e: Error | ResponseError | undefined | null) {
 		pino.error(`Scrybble ${error_name} occurred.`)
-		pino.error(e)
+		if (e == null) {
+			pino.error("The supplied error object is empty.");
+		} else {
+			pino.error(e);
+		}
 		if (e && "message" in e && e.message.includes("ERR_CONNECTION_REFUSED")) {
 			return errors["SERVER_CONNECTION_ERROR"](e)
 		}

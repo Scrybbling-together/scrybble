@@ -41,7 +41,10 @@ export class SyncQueue implements ISyncQueue {
 						await this.requestFileToBeSynced(job)
 						busy += 1
 					} else if (job.getState() === SyncJobStates.ready_to_download) {
-						await this.download(job)
+						const file = await this.download(job)
+						if (file) {
+							await this.writeDownloadedZip(job, file)
+						}
 						busy += 1
 					} else if (job.getState() === SyncJobStates.processing) {
 						await this.checkProcessingState(job)
@@ -88,31 +91,41 @@ export class SyncQueue implements ISyncQueue {
 		return this.syncJobs.filter((job: SyncJob) => this.busyStates.contains(job.getState())).length
 	}
 
-	private async download(job: SyncJob) {
+	public async download(job: SyncJob): Promise<ArrayBuffer | null> {
+		try {
+			this.onStartDownloadFile(job)
+			await job.startDownload()
+			return await requestUrl({
+				method: "GET",
+				url: job.download_url!
+			}).arrayBuffer
+		} catch (e) {
+			this.onFinishedDownloadFile(job, false, e as Error)
+			Errors.handle("FILE_DOWNLOAD_ERROR", e as Error)
+			await job.downloadingFailed();
+		}
+	}
+
+	private async writeDownloadedZip(job: SyncJob, file: ArrayBuffer) {
 		let relativePath = dirPath(job.filename)
 		let nameOfFile = sanitizeFilename(basename(job.filename))
 		const folderPath = await this.ensureFolderExists(this.vault, relativePath, this.settings.sync_folder)
 		const out_path = path.join(folderPath, nameOfFile);
 
+		let zip;
 		try {
-			this.onStartDownloadFile(job)
-			await job.startDownload()
-			const response = await requestUrl({
-				method: "GET",
-				url: job.download_url!
-			})
-
-			const zip = await jszip.loadAsync(response.arrayBuffer)
+			zip = await jszip.loadAsync(file)
 			// @ts-expect-error TS2345
 			await this.zippedFileToVault(this.vault, zip, /_remarks(-only)?.pdf/, `${out_path}.pdf`)
 			// @ts-expect-error TS2345
 			await this.zippedFileToVault(this.vault, zip, /_obsidian.md/, `${out_path}.md`, false)
 			await job.downloaded()
 			this.onFinishedDownloadFile(job, true)
-		} catch (e) {
+		} catch(e) {
 			this.onFinishedDownloadFile(job, false, e as Error)
-			Errors.handle("FILE_DOWNLOAD_ERROR", e as Error)
-			await job.downloadingFailed()
+			Errors.handle("ZIP_EXTRACT_ERROR", e as Error)
+			await job.downloadingFailed();
+			return;
 		}
 	}
 
@@ -137,12 +150,12 @@ export class SyncQueue implements ISyncQueue {
 
 	private async ensureFolderExists(vault: App["vault"], relativePath: string, sync_folder: string) {
 		let folderPath = relativePath.startsWith("/") ? `${sync_folder}${relativePath}` : `${sync_folder}/${relativePath}`
-		folderPath = folderPath.split("/").map((folderName) => sanitizeFilename(folderName)).join("/")
+		folderPath = folderPath.split("/").map((folderName) => sanitizeFilename(folderName, true)).join("/")
 		try {
 			await vault.createFolder(folderPath)
 		} catch (e) {
 			if (e instanceof Error && !e.message.includes("already exists")) {
-				new Notice(`Scrybble: failed to create Scrybble highlights folder at ${relativePath}. Error reference = 102`)
+				Errors.handle("UNABLE_TO_CREATE_FOLDER", e);
 			}
 		}
 
@@ -189,3 +202,5 @@ export class SyncQueue implements ISyncQueue {
 		}
 	}
 }
+
+window.SyncQueue = SyncQueue;
