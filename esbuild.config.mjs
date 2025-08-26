@@ -49,6 +49,8 @@ const options = {
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
 	outfile: 'main.js',
+	platform: 'node',
+	conditions: ['node'],
 };
 let ctx = await esbuild.context(options).catch(() => process.exit(1));
 

@@ -1,5 +1,5 @@
 import {html, TemplateResult} from "lit-html";
-import {pino} from "./logging";
+import {logger} from "./logging";
 
 export interface ResponseError extends Error {
 	status: number;
@@ -124,12 +124,12 @@ const errors = {
 
 export class Errors {
 	public static handle(error_name: keyof typeof errors, e: Error | ResponseError | undefined | null) {
-		pino.error(`Scrybble ${error_name} occurred.`)
+		logger.error(`Scrybble ${error_name} occurred.`)
 		if (e == null) {
-			pino.error("The supplied error object is empty.");
+			logger.error("The supplied error object is empty.");
 			e = new Error("The supplied error object is empty.")
 		} else {
-			pino.error(e);
+			logger.error(e);
 		}
 		if (e && "message" in e && e.message.includes("ERR_CONNECTION_REFUSED")) {
 			return errors["SERVER_CONNECTION_ERROR"](e)
