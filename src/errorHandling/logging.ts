@@ -7,8 +7,7 @@ export function retrieveScrybbleLogs() {
 	return JSON.parse(localStorage.getItem(storageKey) ?? "[]");
 }
 
-function writeToLocalstorage(obj: Record<string, any>, ...rest) {
-	console.log(obj, rest)
+function writeToLocalstorage(obj: Record<string, any>) {
 	delete obj["hostname"];
 	delete obj["pid"];
 	delete obj["time"];

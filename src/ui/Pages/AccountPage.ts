@@ -136,7 +136,7 @@ export class AccountPage extends LitElement {
 		try {
 			return new Date(dateString).toLocaleDateString();
 		} catch (error) {
-			pino.warn("Failed to format date", {dateString, error});
+			pino.warn({dateString, error});
 			return 'Unknown';
 		}
 	}

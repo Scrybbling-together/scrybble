@@ -127,6 +127,7 @@ export class Errors {
 		if (e) {
 			pino.error({err: e}, `Scrybble ${error_name} occurred.`)
 		} else {
+			e = new Error("No error specified by caller");
 			pino.error(`Scrybble ${error_name} occurred.`);
 		}
 		if (e && "message" in e && e.message.includes("ERR_CONNECTION_REFUSED")) {

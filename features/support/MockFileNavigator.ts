@@ -1,5 +1,5 @@
 import {ContextMenuItem, FileNavigator} from "../../@types/scrybble";
-import path from "node:path";
+import path from "path";
 
 export class MockFileNavigator implements FileNavigator {
 	public openedFiles: Array<{ path: string, method: string }> = [];
@@ -30,7 +30,6 @@ export class MockFileNavigator implements FileNavigator {
 		const dirname = path.dirname(requestedPath);
 		// Obsidian always returns null for absolute paths
 		if (path.isAbsolute(dirname)) {
-			console.log(`absolute path ${requestedPath}!`)
 			return null;
 		}
 		for (let existingPath of this.files.keys()) {

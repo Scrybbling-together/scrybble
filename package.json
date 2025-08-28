@@ -37,6 +37,7 @@
 		"jszip": "^3.10.1",
 		"lit-element": "^4.2.1",
 		"lit-html": "^3.3.1",
+		"path-browserify": "^1.0.1",
 		"pino": "^9.9.0",
 		"sinon": "^20.0.0",
 		"sinon-chai": "^4.0.1",

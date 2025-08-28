@@ -4,7 +4,7 @@ import {basename, dirPath, sanitizeFilename} from "./support";
 import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
 import * as jszip from "jszip";
 import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
-import path from "node:path";
+import path from "path";
 
 export interface ISyncQueue {
 	requestSync(filename: string): void;

@@ -191,7 +191,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			await navigator.clipboard.writeText(this.deviceAuth.user_code);
 			return true;
 		} catch (error) {
-			pino.warn("Failed to copy to clipboard", error);
+			pino.warn(error as Error);
 			return false;
 		}
 	}

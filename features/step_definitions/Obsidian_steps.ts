@@ -1,5 +1,5 @@
 import {ObsidianWorld} from "../support/ObsidianWorld";
-import path from "node:path";
+import path from "path";
 
 const {Given} = require("@cucumber/cucumber");
 Given("The Scrybble folder is configured to be {string}", function (this: ObsidianWorld, config_value: string) {

@@ -7,7 +7,7 @@ import {consume} from "@lit/context";
 import {scrybbleContext} from "../scrybbleContext";
 import {ScrybbleCommon, SyncFile} from "../../../@types/scrybble";
 import {SyncJobStates} from "../../SyncJob";
-import path from "node:path";
+import path from "path";
 
 export class RmFile extends LitElement {
 	@consume({context: scrybbleContext})
