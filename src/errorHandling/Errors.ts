@@ -124,12 +124,10 @@ const errors = {
 
 export class Errors {
 	public static handle(error_name: keyof typeof errors, e: Error | ResponseError | undefined | null) {
-		pino.error(`Scrybble ${error_name} occurred.`)
-		if (e == null) {
-			pino.error("The supplied error object is empty.");
-			e = new Error("The supplied error object is empty.")
+		if (e) {
+			pino.error({err: e}, `Scrybble ${error_name} occurred.`)
 		} else {
-			pino.error(e);
+			pino.error(`Scrybble ${error_name} occurred.`);
 		}
 		if (e && "message" in e && e.message.includes("ERR_CONNECTION_REFUSED")) {
 			return errors["SERVER_CONNECTION_ERROR"](e)

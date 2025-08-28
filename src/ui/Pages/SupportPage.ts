@@ -1,11 +1,11 @@
 import {LitElement} from "lit-element";
 import {html} from "lit-html";
 import {getIcon} from "obsidian";
-import {retrieveScrybbleLogs} from "../../errorHandling/LocalStorageTransport";
 import {consume} from "@lit/context";
 import {scrybbleContext} from "../scrybbleContext";
 import {property} from "lit-element/decorators.js";
 import {ScrybbleCommon} from "../../../@types/scrybble";
+import {retrieveScrybbleLogs} from "../../errorHandling/logging";
 
 export class SupportPage extends LitElement {
 	@consume({context: scrybbleContext})
