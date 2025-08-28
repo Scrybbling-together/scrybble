@@ -7,7 +7,7 @@ import {
 	ScrybbleSettings,
 	ScrybbleUser
 } from "../@types/scrybble";
-import {logger} from "./errorHandling/logging";
+import {pino} from "./errorHandling/logging";
 import {ResponseError} from "./errorHandling/Errors";
 import {StateMachine, t} from "typescript-fsm";
 
@@ -170,7 +170,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			setTimeout(() => this.startPolling(), 1000);
 
 		} catch (error) {
-			logger.error(error, "Failed to request device code");
+			pino.error(error, "Failed to request device code");
 			await this.dispatch(AuthEvents.DEVICE_CODE_REQUEST_FAILED);
 			throw error;
 		}
@@ -191,14 +191,14 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			await navigator.clipboard.writeText(this.deviceAuth.user_code);
 			return true;
 		} catch (error) {
-			logger.warn("Failed to copy to clipboard", error);
+			pino.warn("Failed to copy to clipboard", error);
 			return false;
 		}
 	}
 
 	public openVerificationUrl(): void {
 		if (!this.deviceAuth?.verification_uri) {
-			logger.warn("No verification URI available");
+			pino.warn("No verification URI available");
 			return;
 		}
 
@@ -219,7 +219,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			this.settings.refresh_token = response.refresh_token;
 			await this.settings.save();
 			await this.dispatch(AuthEvents.REFRESH_SUCCESS);
-			logger.info("Successfully refreshed OAuth token");
+			pino.info("Successfully refreshed OAuth token");
 
 			return {access_token: response.access_token, refresh_token: response.refresh_token};
 		} catch (e) {
@@ -234,12 +234,12 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 	async refreshToken(error: ResponseError | Error) {
 		// If we get a 401, try to refresh the token
 		if ("status" in error && error.status === 401 && this.settings.refresh_token) {
-			logger.warn("Got a 401, refreshing");
+			pino.warn("Got a 401, refreshing");
 			try {
 				await this.refreshAccessToken();
 				await this.fetchAndSetUser(false);
 			} catch (refreshError) {
-				logger.error(error, "You were unexpectedly logged out, please try to log back in again.");
+				pino.error(error, "You were unexpectedly logged out, please try to log back in again.");
 				this.settings.refresh_token = undefined;
 				this.settings.access_token = undefined;
 				await this.settings.save();
@@ -248,7 +248,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 				throw error;
 			}
 		} else {
-			logger.error("Unexpected server error");
+			pino.error("Unexpected server error");
 			throw error;
 		}
 	}
@@ -272,7 +272,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 			this.user = await this.api.fetchGetUser();
 			await this.dispatch(AuthEvents.USER_FETCHED);
 		} catch (error) {
-			logger.error(error, "Failed to fetch user data");
+			pino.error(error, "Failed to fetch user data");
 			await this.dispatch(AuthEvents.USER_FETCH_FAILED);
 			if (attemptRefreshOnFailure) {
 				await this.refreshToken(error as Error);
@@ -282,7 +282,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 
 	private async startPolling(): Promise<void> {
 		if (!this.deviceAuth) {
-			logger.error("Cannot start polling: no device auth data");
+			pino.error("Cannot start polling: no device auth data");
 			return;
 		}
 
@@ -294,7 +294,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 
 		const poll = async (): Promise<void> => {
 			if (Date.now() >= expirationTime) {
-				logger.warn("Device authorization expired");
+				pino.warn("Device authorization expired");
 				this.stopPolling();
 				await this.dispatch(AuthEvents.AUTHORIZATION_EXPIRED);
 				return;
@@ -335,7 +335,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 
 					case 'access_denied':
 						// User denied the authorization
-						logger.info("User denied device authorization");
+						pino.info("User denied device authorization");
 						this.stopPolling();
 						this.deviceAuth = null;
 						await this.dispatch(AuthEvents.AUTHORIZATION_DENIED);
@@ -343,7 +343,7 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 
 					case 'expired_token':
 						// Device code expired
-						logger.warn("Device code expired");
+						pino.warn("Device code expired");
 						this.stopPolling();
 						this.deviceAuth = null;
 						await this.dispatch(AuthEvents.AUTHORIZATION_EXPIRED);
@@ -351,14 +351,14 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 
 					default:
 						// Other error
-						logger.error(deviceTokenResponse, "Unexpected error during device polling");
+						pino.error(deviceTokenResponse, "Unexpected error during device polling");
 						this.stopPolling();
 						this.deviceAuth = null;
 						await this.dispatch(AuthEvents.AUTHORIZATION_DENIED);
 						break;
 				}
 			} catch (error) {
-				logger.error(error, "Failed to poll for device token");
+				pino.error(error, "Failed to poll for device token");
 			}
 		};
 

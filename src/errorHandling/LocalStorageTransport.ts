@@ -1,5 +1,3 @@
-import {Writable} from "stream";
-
 const storageKey = 'scrybble-logs';
 const maxEntries = 200;
 
@@ -7,14 +5,16 @@ export function retrieveScrybbleLogs() {
 	return JSON.parse(localStorage.getItem(storageKey) ?? "[]");
 }
 
-export default function writeToLocalstorage(obj: Record<string, any>, ...rest) {
+export default function writeToLocalstorage(obj: Record<string, any>) {
 	delete obj["hostname"];
 	delete obj["pid"];
 	delete obj["time"];
 
 	try {
+		// Get existing logs
 		const existingLogs: Record<string, any>[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
+		// Add new log entry with timestamp
 		const logEntry = {
 			...obj,
 			timestamp: new Date().toISOString(),
@@ -22,29 +22,16 @@ export default function writeToLocalstorage(obj: Record<string, any>, ...rest) {
 
 		existingLogs.push(logEntry);
 
+		// Implement rotation: keep only the most recent maxEntries
 		if (existingLogs.length > maxEntries) {
 			existingLogs.splice(0, existingLogs.length - maxEntries);
 		}
 
+		// Save back to localStorage
 		localStorage.setItem(storageKey, JSON.stringify(existingLogs));
 	} catch (error) {
+		// If localStorage fails, try to at least log to console
 		console.error('Failed to write to localStorage transport:', error);
 		console.log('Original log:', obj);
-	}
-}
-
-export class LocalStorageStream extends Writable {
-	constructor() {
-		super({objectMode: true});
-	}
-
-	_write(chunk: any, encoding: string, callback: (error?: Error | null) => void) {
-		try {
-			const logObj = typeof chunk === 'string' ? JSON.parse(chunk) : chunk;
-			writeToLocalstorage(logObj);
-			callback();
-		} catch (error) {
-			callback(error as Error);
-		}
 	}
 }

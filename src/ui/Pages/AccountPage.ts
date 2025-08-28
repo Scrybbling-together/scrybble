@@ -6,7 +6,7 @@ import {scrybbleContext} from "../scrybbleContext";
 import {ScrybbleCommon} from "../../../@types/scrybble";
 import {getIcon} from "obsidian";
 import {ErrorMessage, Errors} from "../../errorHandling/Errors";
-import {logger} from "../../errorHandling/logging";
+import {pino} from "../../errorHandling/logging";
 import {AuthStates} from "../../Authentication";
 
 export class AccountPage extends LitElement {
@@ -93,7 +93,7 @@ export class AccountPage extends LitElement {
 	}
 
 	private async startDeviceFlow(): Promise<void> {
-		logger.info("Starting Device Authorization flow");
+		pino.info("Starting Device Authorization flow");
 
 		try {
 			this.error = null;
@@ -108,7 +108,7 @@ export class AccountPage extends LitElement {
 	}
 
 	private async handleErrorRetry(): Promise<void> {
-		logger.info("Retrying after error");
+		pino.info("Retrying after error");
 		this.error = null;
 	}
 
@@ -136,7 +136,7 @@ export class AccountPage extends LitElement {
 		try {
 			return new Date(dateString).toLocaleDateString();
 		} catch (error) {
-			logger.warn("Failed to format date", {dateString, error});
+			pino.warn("Failed to format date", {dateString, error});
 			return 'Unknown';
 		}
 	}
@@ -287,7 +287,7 @@ export class AccountPage extends LitElement {
 		const user = this.scrybble.authentication.user;
 		if (!user) return "";
 		if (!user.subscription_status?.licenseInformation?.subscription_id) {
-			logger.warn("Missing subscription ID for Gumroad URL");
+			pino.warn("Missing subscription ID for Gumroad URL");
 			return "#";
 		}
 		return `https://gumroad.com/subscriptions/${user.subscription_status.licenseInformation.subscription_id}/manage`;

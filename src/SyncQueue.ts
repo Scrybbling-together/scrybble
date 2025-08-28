@@ -150,7 +150,7 @@ export class SyncQueue implements ISyncQueue {
 
 	private async ensureFolderExists(vault: App["vault"], relativePath: string, sync_folder: string) {
 		let folderPath = relativePath.startsWith("/") ? `${sync_folder}${relativePath}` : `${sync_folder}/${relativePath}`
-		folderPath = folderPath.split("/").map((folderName) => sanitizeFilename(folderName)).join("/")
+		folderPath = folderPath.split("/").map((folderName) => sanitizeFilename(folderName, true)).join("/")
 		try {
 			await vault.createFolder(folderPath)
 		} catch (e) {

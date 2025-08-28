@@ -18,7 +18,7 @@ import loadLitComponents from "./src/ui/loadComponents";
 import {SyncQueue} from "./src/SyncQueue";
 import {Authentication} from "./src/Authentication";
 import {SettingsImpl} from "./src/SettingsImpl";
-import {logger} from "./src/errorHandling/logging";
+import {pino} from "./src/errorHandling/logging";
 
 // only needs to happen once, ever.
 loadLitComponents()
@@ -40,7 +40,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	}
 
 	async onload() {
-		logger.info("Loading Scrybble plugin")
+		pino.info("Loading Scrybble plugin")
 		this.settings = new SettingsImpl(await this.loadData(), async () => {
 			await this.saveData(this.settings);
 		});
@@ -245,7 +245,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	}
 
 	public async fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
-		logger.info(`Sending request for a refresh token with ${this.refresh_token}`);
+		pino.info(`Sending request for a refresh token with ${this.refresh_token}`);
 		const formData = new URLSearchParams({
 			grant_type: 'refresh_token',
 			client_id: this.settings.client_id,
