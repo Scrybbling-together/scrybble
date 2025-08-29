@@ -28,8 +28,7 @@ export class RmFileTree extends LitElement {
 						if (fileOrDirectory.type === "d") {
 							return html`<rm-dir .directory="${fileOrDirectory}" />`;
 						} else if (fileOrDirectory.type === "f") {
-							return html` <rm-file .file="${fileOrDirectory}"/>
-						`;
+							return html` <rm-file .file="${fileOrDirectory}" />`;
 						}
 					})}
 				</div>

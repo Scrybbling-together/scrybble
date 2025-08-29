@@ -1,9 +1,6 @@
 import {ContextMenuItem, FileNavigator} from "../@types/scrybble";
 import {App, Menu} from "obsidian";
 
-
-
-
 export class ObsidianFileNavigator implements FileNavigator {
 	constructor(private app: App) {
 	}

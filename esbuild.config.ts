@@ -1,6 +1,5 @@
-import esbuild from "esbuild";
+import esbuild, {BuildOptions} from "esbuild";
 import process from "process";
-import builtins from 'builtin-modules'
 
 const banner =
 `/*
@@ -11,15 +10,16 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = (process.argv[2] === 'production');
 
-const options = {
+const options: BuildOptions = {
 	banner: {
 		js: banner,
 	},
+	platform: "browser",
 	entryPoints: ['main.ts'],
 	bundle: true,
+
 	external: [
 		'obsidian',
-		'electron',
 		'@codemirror/autocomplete',
 		'@codemirror/closebrackets',
 		'@codemirror/collab',
@@ -40,8 +40,12 @@ const options = {
 		'@codemirror/stream-parser',
 		'@codemirror/text',
 		'@codemirror/tooltip',
-		'@codemirror/view',
-		...builtins],
+		'@codemirror/view'],
+	alias: {
+		'path': 'path-browserify',
+		'stream': 'stream-browserify'
+	},
+	mainFields: ['browser', 'module', 'main'],
 	format: 'cjs',
 	target: "ES2021",
 	logLevel: "info",

@@ -4,8 +4,8 @@
 	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
 	"main": "main.js",
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"dev": "bun esbuild.config.ts",
+		"build": "tsc -noEmit -skipLibCheck && bun esbuild.config.ts production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"test": "cucumber-js"
 	},
@@ -34,13 +34,14 @@
 		"@types/sinon": "^17.0.4",
 		"@types/sinon-chai": "^4.0.0",
 		"chai": "^5.3.3",
-		"jszip": "^3.10.1",
+		"fflate": "^0.8.2",
 		"lit-element": "^4.2.1",
 		"lit-html": "^3.3.1",
 		"path-browserify": "^1.0.1",
 		"pino": "^9.9.0",
 		"sinon": "^20.0.0",
 		"sinon-chai": "^4.0.1",
+		"stream-browserify": "^3.0.0",
 		"typescript-fsm": "^1.6.0"
 	}
 }

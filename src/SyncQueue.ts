@@ -2,7 +2,7 @@ import {SyncJob, SyncJobStates} from "./SyncJob";
 import {Errors, ResponseError} from "./errorHandling/Errors";
 import {basename, dirPath, sanitizeFilename} from "./support";
 import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
-import * as jszip from "jszip";
+import { unzip } from "fflate";
 import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
 import path from "path";
 
@@ -110,15 +110,22 @@ export class SyncQueue implements ISyncQueue {
 		let relativePath = dirPath(job.filename)
 		let nameOfFile = sanitizeFilename(basename(job.filename))
 		const folderPath = await this.ensureFolderExists(this.vault, relativePath, this.settings.sync_folder)
-		const out_path = path.join(folderPath, nameOfFile);
+		const out_path =
+			path.join(folderPath, nameOfFile);
 
-		let zip;
 		try {
-			zip = await jszip.loadAsync(file)
-			// @ts-expect-error TS2345
-			await this.zippedFileToVault(this.vault, zip, /_remarks(-only)?.pdf/, `${out_path}.pdf`)
-			// @ts-expect-error TS2345
-			await this.zippedFileToVault(this.vault, zip, /_obsidian.md/, `${out_path}.md`, false)
+			const zipData = new Uint8Array(file);
+			
+			// Unzip the file using fflate
+			const unzippedFiles = await new Promise<Record<string, Uint8Array>>((resolve, reject) => {
+				unzip(zipData, (err, unzipped) => {
+					if (err) reject(err);
+					else resolve(unzipped);
+				});
+			});
+			
+			await this.extractFileFromZip(this.vault, unzippedFiles, /_remarks(-only)?.pdf/, `${out_path}.pdf`)
+			await this.extractFileFromZip(this.vault, unzippedFiles, /_obsidian.md/, `${out_path}.md`, false)
 			await job.downloaded()
 			this.onFinishedDownloadFile(job, true)
 		} catch(e) {
@@ -162,16 +169,18 @@ export class SyncQueue implements ISyncQueue {
 		return folderPath
 	}
 
-	private async zippedFileToVault(vault: App["vault"], zip: jszip, nameMatch: RegExp, vaultFileName: string, required = true) {
-		let data;
-		try {
-			data = await zip.file(nameMatch)[0].async("arraybuffer")
-		} catch (e) {
+	private async extractFileFromZip(vault: App["vault"], unzippedFiles: Record<string, Uint8Array>, nameMatch: RegExp, vaultFileName: string, required = true) {
+		// Find matching file in the unzipped files
+		const matchingFile = Object.keys(unzippedFiles).find(filename => nameMatch.test(filename));
+		
+		if (!matchingFile) {
 			if (required) {
 				throw new Error("Scrybble: Missing file in downloaded sync zip, reference = 106")
 			}
 			return
 		}
+		
+		const data = unzippedFiles[matchingFile].buffer as ArrayBuffer;
 		try {
 			await this.writeToFile(vault, vaultFileName, data)
 		} catch (e) {
