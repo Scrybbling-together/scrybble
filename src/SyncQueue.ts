@@ -32,10 +32,6 @@ export class SyncQueue implements ISyncQueue {
 			const maxActiveJobs = 3
 			let busy = this.countBusyJobs();
 			for (let job of this.syncJobs) {
-				if (job.getState() === SyncJobStates.downloading || job.getState() === SyncJobStates.awaiting_processing) {
-					busy += 1;
-				}
-
 				if (busy < maxActiveJobs) {
 					if (job.getState() === SyncJobStates.init) {
 						await this.requestFileToBeSynced(job)
