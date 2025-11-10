@@ -84,7 +84,7 @@ export class ScrybbleOnboarding extends LitElement {
 						${this.feedback}
 					</div>
 				` : ''}
-				<error-view .error=${this.error}></error-view>
+				<sc-error-view .error=${this.error}></sc-error-view>
 				 
 				${view}
 			</div>`

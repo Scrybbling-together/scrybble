@@ -39,10 +39,10 @@ export class AccountPage extends LitElement {
 
 	render(): TemplateResult {
 		const errorTemplate = this.error ? html`
-			<error-view .error="${this.error}" .actions="${[
+			<sc-error-view .error="${this.error}" .actions="${[
 				html`
 					<button class="retry" @click="${() => this.handleErrorRetry()}">Retry</button>`
-			]}"></error-view>
+			]}"></sc-error-view>
 		` : nothing;
 
 		return html`

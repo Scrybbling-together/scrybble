@@ -83,7 +83,7 @@ export class ScrybbleFileTreeComponent extends LitElement {
 			</div>`;
 
 		const tree = !this.error && this.tree ? html`
-			<rm-tree .tree="${this.tree}" @rm-click="${this.handleClickFileOrFolder.bind(this)}"></rm-tree>` : nothing;
+			<sc-rm-tree .tree="${this.tree}" @rm-click="${this.handleClickFileOrFolder.bind(this)}"></sc-rm-tree>` : nothing;
 
 		return html`
 			<div class="inner-container">

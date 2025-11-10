@@ -79,7 +79,7 @@ export class ScrybbleUI extends LitElement {
 		const { error } = this;
 
 		const errorTemplate = error ? html`
-            <error-view .error="${error}" .actions="${[html`
+            <sc-error-view .error="${error}" .actions="${[html`
                 <button class="retry" @click="${() => this.handleErrorRefresh()}">Refresh</button>`]}"/>` : nothing;
 
 		return html`
@@ -128,13 +128,13 @@ export class ScrybbleUI extends LitElement {
 
 		switch (currentView) {
 			case ScrybbleViewType.FILE_TREE:
-				return html`<scrybble-file-tree/>`;
+				return html`<sc-file-tree/>`;
 			case ScrybbleViewType.SUPPORT:
-				return html`<scrybble-support/>`;
+				return html`<sc-support/>`;
 			case ScrybbleViewType.ACCOUNT:
-				return html`<scrybble-account/>`;
+				return html`<sc-account/>`;
 			case ScrybbleViewType.ONBOARDING:
-				return html`<scrybble-onboarding 
+				return html`<sc-onboarding 
 					.onboardingReady="${this.requestUpdate.bind(this)}"
 				/>`;
 			default:

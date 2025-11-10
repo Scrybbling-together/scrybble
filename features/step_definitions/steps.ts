@@ -12,7 +12,7 @@ When("The user opens the Scrybble interface", async function (this: ObsidianWorl
 	this.container = document.createElement('div');
 	document.body.appendChild(this.container as Node);
 
-	render(html`<scrybble-ui
+	render(html`<sc-ui
 		.scrybble="${this.scrybble}"
 		.onViewSwitch="${() => {}}"
 		.onErrorRefresh="${() => {}}"
@@ -44,7 +44,7 @@ When("The plugin initializes", async function (this: ObsidianWorld) {
 });
 
 function findFileByNameInReMarkableFiletree(world: ObsidianWorld, name: string) {
-	const files = Array.from(world.container!.querySelectorAll("rm-file"));
+	const files = Array.from(world.container!.querySelectorAll("sc-rm-file"));
 	const ts = files.filter(node => ((node.querySelector(".filename") as unknown) as HTMLElement).innerText === name);
 	return ts[0];
 }

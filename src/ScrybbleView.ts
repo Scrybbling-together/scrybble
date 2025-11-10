@@ -67,7 +67,7 @@ export class ScrybbleView extends ItemView {
 		}
 
 		render(html`
-			<scrybble-ui .scrybble="${scrybble}"
+			<sc-ui .scrybble="${scrybble}"
 						 .onViewSwitch="${this.handleViewSwitch.bind(this)}"
 						 .onErrorRefresh="${this.handleErrorRefresh.bind(this)}"
 			/>`, this.contentEl);

@@ -38,6 +38,18 @@ const errors = {
 		helpAction: html`...`
 	}),
 
+	"COMPONENT_REGISTRATION_ERROR": (e?: Error) => ({
+		title: html`Was unable to initialize the Scrybble plugin`,
+		message: html`...`,
+		helpAction: html`...`
+	}),
+
+	"ICON_REGISTRATION_ERROR": (e?: Error) => ({
+		title: html`Was unable to define custom icons for the Scrybble plugin`,
+		message: html`...`,
+		helpAction: html`...`
+	}),
+
 	"ZIP_EXTRACT_ERROR": (e?: Error | ResponseError) => ({
 		title: html`Unable to extract the downloaded files`,
 		message: html`Your file is likely corrupted.`,
@@ -125,7 +137,7 @@ const errors = {
 export class Errors {
 	public static handle(error_name: keyof typeof errors, e: Error | ResponseError | undefined | null) {
 		if (e) {
-			pino.error({err: e}, `Scrybble ${error_name} occurred.`)
+			pino.error({err: e, errorMessage: e?.message, errorStack: e?.stack, errorName: e?.constructor.name}, `Scrybble ${error_name} occurred.`)
 		} else {
 			e = new Error("No error specified by caller");
 			pino.error(`Scrybble ${error_name} occurred.`);

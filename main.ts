@@ -19,6 +19,7 @@ import {SyncQueue} from "./src/SyncQueue";
 import {Authentication} from "./src/Authentication";
 import {SettingsImpl} from "./src/SettingsImpl";
 import {pino} from "./src/errorHandling/logging";
+import {Errors} from "./src/errorHandling/Errors";
 
 // only needs to happen once, ever.
 loadLitComponents()
@@ -61,6 +62,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		this.addSettingTab(new Settings(this.app, this));
 		this.registerView(SCRYBBLE_VIEW,
 			(leaf) => {
+
 				return new ScrybbleView(leaf, this);
 			})
 
