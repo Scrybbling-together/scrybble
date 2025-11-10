@@ -1,10 +1,11 @@
 import {SyncJob, SyncJobStates} from "./SyncJob";
 import {Errors, ResponseError} from "./errorHandling/Errors";
 import {basename, dirPath, sanitizeFilename} from "./support";
-import {App, Notice, requestUrl, TFile, Vault} from "obsidian";
+import {App, requestUrl, TFile, Vault} from "obsidian";
 import { unzip } from "fflate";
 import {ScrybbleApi, ScrybbleSettings} from "../@types/scrybble";
 import path from "path";
+import {pino} from "./errorHandling/logging";
 
 export interface ISyncQueue {
 	requestSync(filename: string): void;
@@ -19,7 +20,6 @@ export class SyncQueue implements ISyncQueue {
 
 	private readonly busyStates = [SyncJobStates.downloading, SyncJobStates.awaiting_processing];
 	private syncJobStateChangeListeners: Map<string, ((newState: SyncJobStates, job: SyncJob) => void)[]> = new Map();
-
 
 	constructor(
 		private settings: ScrybbleSettings,
@@ -73,13 +73,17 @@ export class SyncQueue implements ISyncQueue {
 	}
 
 	async downloadProcessedFile(filename: string, download_url: string, sync_id: number) {
+		pino.info(`Creating sync job for file '${filename}' from the sync delta`)
 		const syncJob = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), filename);
+		pino.info(`Sync job for file '${filename}' from sync delta is successfully created, will now be queued`)
 		await syncJob.readyToDownload(download_url, sync_id)
 		this.syncJobs.push(syncJob)
 	}
 
 	requestSync(filename: string) {
+		pino.info(`Creating sync job for file '${filename}' requested by the user`)
 		const job = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), filename)
+		pino.info(`Sync job for file '${filename}' requested by the user is successfully created, will now be queued`)
 		this.syncJobs.push(job)
 	}
 

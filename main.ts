@@ -19,10 +19,6 @@ import {SyncQueue} from "./src/SyncQueue";
 import {Authentication} from "./src/Authentication";
 import {SettingsImpl} from "./src/SettingsImpl";
 import {pino} from "./src/errorHandling/logging";
-import {Errors} from "./src/errorHandling/Errors";
-
-// only needs to happen once, ever.
-loadLitComponents()
 
 export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePersistentStorage {
 	// @ts-expect-error TS2564 -- onload acts as a constructor.
@@ -42,6 +38,11 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 
 	async onload() {
 		pino.info("Loading Scrybble plugin")
+
+		// only needs to happen once, ever.
+		pino.info("Loading lit components")
+		loadLitComponents()
+
 		this.settings = new SettingsImpl(await this.loadData(), async () => {
 			await this.saveData(this.settings);
 		});

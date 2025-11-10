@@ -120,7 +120,7 @@ export class SyncProgressNotice {
 	constructor(filename: string) {
 		this.notice = new Notice("", 0);
 
-		this.indicator = new SyncProgressIndicator();
+		this.indicator = document.createElement('sc-sync-progress-indicator') as SyncProgressIndicator;
 		this.indicator.filename = filename;
 		this.indicator.state = SyncJobStates.init;
 

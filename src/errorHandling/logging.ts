@@ -1,7 +1,7 @@
 import * as p from "pino";
 
 const storageKey = 'scrybble-logs';
-const maxEntries = 200;
+const maxEntries = 500;
 
 export function retrieveScrybbleLogs() {
 	return JSON.parse(localStorage.getItem(storageKey) ?? "[]");
