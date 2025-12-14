@@ -79,6 +79,11 @@ export type OneTimeCodeResponse =
 	| { newState: OnboardingState }
 	| { error: string };
 
+export type ResetConnectionResponse = {
+	success: boolean;
+	newState: OnboardingState;
+};
+
 
 export interface FeedbackFormDetails {
 	developer_access_consent_granted: boolean;
@@ -126,6 +131,8 @@ export interface ScrybbleApi {
 	sendOneTimeCode(code: string): Promise<OneTimeCodeResponse>;
 
 	fetchGiveFeedback(details: FeedbackFormDetails): Promise<void>;
+
+	deleteRemarkableConnection(): Promise<ResetConnectionResponse>;
 }
 
 export interface ScrybblePersistentStorage {

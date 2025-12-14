@@ -23,6 +23,12 @@ export class AccountPage extends LitElement {
 	@state()
 	private copySuccess = false;
 
+	@state()
+	private isResettingConnection = false;
+
+	@state()
+	private showResetConfirmation = false;
+
 	async connectedCallback() {
 		super.connectedCallback();
 
@@ -105,6 +111,30 @@ export class AccountPage extends LitElement {
 
 	private async handleLogout(): Promise<void> {
 		await this.scrybble.authentication.logout();
+	}
+
+	private showResetConnectionConfirmation(): void {
+		this.showResetConfirmation = true;
+	}
+
+	private cancelResetConnection(): void {
+		this.showResetConfirmation = false;
+	}
+
+	private async handleResetConnection(): Promise<void> {
+		pino.info("Resetting reMarkable connection");
+		this.isResettingConnection = true;
+		this.showResetConfirmation = false;
+
+		try {
+			await this.scrybble.api.deleteRemarkableConnection();
+			// Refresh user data to update onboarding state
+			await this.scrybble.authentication.refreshUserInfo();
+		} catch (error) {
+			this.error = Errors.handle("RESET_CONNECTION_ERROR", error as Error);
+		} finally {
+			this.isResettingConnection = false;
+		}
 	}
 
 	private async handleErrorRetry(): Promise<void> {
@@ -381,12 +411,48 @@ export class AccountPage extends LitElement {
 					</div>
 				</div>
 
-				<button
-					class="logout-button"
-					@click="${this.handleLogout}"
-					title="Sign out">
-					${getIcon("log-out")} Log out
-				</button>
+				<div class="account-actions-section">
+					<h3>Account Actions</h3>
+
+					${this.showResetConfirmation ? html`
+						<div class="reset-confirmation">
+							<p class="reset-warning">
+								${getIcon("alert-triangle")}
+								<strong>Are you sure?</strong> This will disconnect your reMarkable account and delete all sync history. You'll need to re-authenticate with reMarkable to continue syncing.
+							</p>
+							<div class="reset-confirmation-buttons">
+								<button
+									class="reset-confirm-button"
+									@click="${this.handleResetConnection}"
+									?disabled="${this.isResettingConnection}">
+									${this.isResettingConnection ?
+										html`${getIcon("loader-2")} Resetting...` :
+										html`${getIcon("trash-2")} Yes, reset connection`}
+								</button>
+								<button
+									class="reset-cancel-button"
+									@click="${this.cancelResetConnection}"
+									?disabled="${this.isResettingConnection}">
+									Cancel
+								</button>
+							</div>
+						</div>
+					` : html`
+						<button
+							class="reset-connection-button"
+							@click="${this.showResetConnectionConfirmation}"
+							title="Disconnect reMarkable and clear sync history">
+							${getIcon("unlink")} Reset reMarkable connection
+						</button>
+					`}
+
+					<button
+						class="logout-button"
+						@click="${this.handleLogout}"
+						title="Sign out">
+						${getIcon("log-out")} Log out
+					</button>
+				</div>
 			</div>
 		`;
 	}

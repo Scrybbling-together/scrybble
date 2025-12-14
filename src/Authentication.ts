@@ -267,6 +267,11 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 		return this.getState() === AuthStates.AUTHENTICATED;
 	}
 
+	public async refreshUserInfo(): Promise<void> {
+		this.user = await this.api.fetchGetUser();
+		this.broadcastStateChange();
+	}
+
 	private async fetchAndSetUser(attemptRefreshOnFailure = true): Promise<void> {
 		try {
 			this.user = await this.api.fetchGetUser();

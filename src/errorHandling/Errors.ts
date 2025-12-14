@@ -131,6 +131,13 @@ const errors = {
 		message: html`Could not connect to the Scrybble servers${formatError(e)}`,
 		helpAction: html`Please try again later. ${PERSISTENT_PROBLEM_MESSAGE}`,
 		details: e
+	}),
+
+	"RESET_CONNECTION_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Failed to reset connection`,
+		message: html`We couldn't reset your reMarkable connection${formatError(e)}`,
+		helpAction: html`Please try again. ${PERSISTENT_PROBLEM_MESSAGE}`,
+		details: e
 	})
 } satisfies Record<string, ErrorHandler>;
 

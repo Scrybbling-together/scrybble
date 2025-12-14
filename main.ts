@@ -5,6 +5,7 @@ import {
 	DeviceTokenResponse,
 	FeedbackFormDetails,
 	OneTimeCodeResponse,
+	ResetConnectionResponse,
 	RMFileTree,
 	ScrybbleApi,
 	ScrybblePersistentStorage,
@@ -301,6 +302,17 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			},
 			body: JSON.stringify(details)
 		});
+	}
+
+	async deleteRemarkableConnection(): Promise<ResetConnectionResponse> {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/remarkable-connection`, {
+			method: "DELETE",
+			headers: {
+				'Accept': 'application/json',
+			}
+		});
+
+		return response.json;
 	}
 
 	private async checkAccountStatus() {
