@@ -5,6 +5,7 @@ import {
 	DeviceTokenResponse,
 	FeedbackFormDetails,
 	OneTimeCodeResponse,
+	ResetConnectionResponse,
 	RMFileTree,
 	RMTreeItem,
 	ScrybbleApi,
@@ -208,6 +209,14 @@ export class MockScrybbleApi implements ScrybbleApi {
 
 	fetchGiveFeedback(details: FeedbackFormDetails): Promise<void> {
 		return Promise.resolve();
+	}
+
+	async deleteRemarkableConnection(): Promise<ResetConnectionResponse> {
+		this.throwIfErrorIsConfigured("deleteRemarkableConnection");
+		return {
+			success: true,
+			newState: "setup-one-time-code"
+		};
 	}
 
 	add_synced_file(filename: string, created_at: string) {

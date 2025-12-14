@@ -70,6 +70,13 @@ const errors = {
 		details: e
 	}),
 
+	"SEARCH_ERROR": (e?: Error | ResponseError) => ({
+		title: html`Search error`,
+		message: html`There was a problem searching your files${formatError(e)}`,
+		helpAction: html`Please try again. ${PERSISTENT_PROBLEM_MESSAGE}`,
+		details: e
+	}),
+
 	"SYNC_HISTORY_ERROR": (e?: Error | ResponseError) => ({
 		title: html`Sync history error`,
 		message: html`There was a problem loading your sync history${formatError(e)}`,

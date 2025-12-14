@@ -1,6 +1,7 @@
 import {RmDir} from "./Components/RmDir";
 import {RmFile} from "./Components/RmFile";
 import {RmFileTree} from "./Components/RmFileTree";
+import {SearchFilter} from "./Components/SearchFilter";
 import {ScrybbleFileTreeComponent} from "./Pages/ScrybbleFileTree";
 import {ErrorComponent} from "./Components/ErrorComponent";
 import {SyncProgressIndicator} from "./Components/SyncNotice";
@@ -21,6 +22,9 @@ export default function loadLitComponents() {
 		}
 		if (!window.customElements.get("sc-rm-dir")) {
 			window.customElements.define('sc-rm-dir', RmDir)
+		}
+		if (!window.customElements.get("sc-search-filter")) {
+			window.customElements.define('sc-search-filter', SearchFilter)
 		}
 		if (!window.customElements.get("sc-file-tree")) {
 			window.customElements.define('sc-file-tree', ScrybbleFileTreeComponent)

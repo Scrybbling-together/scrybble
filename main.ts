@@ -1,4 +1,58 @@
-import {Plugin, requestUrl, WorkspaceLeaf} from 'obsidian';
+import {App, Modal, Plugin, requestUrl, Setting, WorkspaceLeaf} from 'obsidian';
+
+class InputModal extends Modal {
+	private result: string = "";
+	private readonly title: string;
+	private readonly placeholder: string;
+	private readonly onSubmit: (result: string | null) => void;
+
+	constructor(app: App, title: string, placeholder: string, onSubmit: (result: string | null) => void) {
+		super(app);
+		this.title = title;
+		this.placeholder = placeholder;
+		this.onSubmit = onSubmit;
+	}
+
+	onOpen() {
+		const {contentEl} = this;
+
+		contentEl.createEl("h3", {text: this.title});
+
+		new Setting(contentEl)
+			.setName("Value")
+			.addText((text) =>
+				text
+					.setPlaceholder(this.placeholder)
+					.onChange((value) => {
+						this.result = value;
+					})
+			);
+
+		new Setting(contentEl)
+			.addButton((btn) =>
+				btn
+					.setButtonText("Search")
+					.setCta()
+					.onClick(() => {
+						this.close();
+						this.onSubmit(this.result || null);
+					})
+			)
+			.addButton((btn) =>
+				btn
+					.setButtonText("Cancel")
+					.onClick(() => {
+						this.close();
+						this.onSubmit(null);
+					})
+			);
+	}
+
+	onClose() {
+		const {contentEl} = this;
+		contentEl.empty();
+	}
+}
 import {
 	AuthenticateWithGumroadLicenseResponse,
 	DeviceCodeResponse,
@@ -11,6 +65,8 @@ import {
 	ScrybblePersistentStorage,
 	ScrybbleSettings,
 	ScrybbleUser,
+	SearchFilters,
+	SearchResult,
 	SyncDelta,
 } from "./@types/scrybble";
 import {Settings} from "./src/settings";
@@ -79,10 +135,40 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			callback: this.showScrybbleFiletree.bind(this)
 		})
 
+		this.addCommand({
+			id: "search-by-name",
+			name: "Search files by name",
+			callback: async () => {
+				const query = await this.promptForInput("Enter name pattern (regex)", "e.g. .*meeting.*");
+				if (query) {
+					await this.openWithSearchFilters({query});
+				}
+			}
+		})
+
+		this.addCommand({
+			id: "search-by-tag",
+			name: "Search files by tag",
+			callback: async () => {
+				const tag = await this.promptForInput("Enter tag name", "e.g. Work");
+				if (tag) {
+					await this.openWithSearchFilters({tags: [tag]});
+				}
+			}
+		})
+
+		this.addCommand({
+			id: "show-starred-files",
+			name: "Show starred files",
+			callback: async () => {
+				await this.openWithSearchFilters({starred: true});
+			}
+		})
+
 		this.app.workspace.onLayoutReady(this.checkAccountStatus.bind(this));
 	}
 
-	async showScrybbleFiletree() {
+	async showScrybbleFiletree(): Promise<WorkspaceLeaf | null> {
 		const {workspace} = this.app;
 
 		let leaf: WorkspaceLeaf | null = null;
@@ -102,6 +188,28 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		if (leaf instanceof WorkspaceLeaf) {
 			await workspace.revealLeaf(leaf);
 		}
+
+		return leaf;
+	}
+
+	private async promptForInput(title: string, placeholder: string): Promise<string | null> {
+		return new Promise((resolve) => {
+			const modal = new InputModal(this.app, title, placeholder, resolve);
+			modal.open();
+		});
+	}
+
+	private async openWithSearchFilters(filters: SearchFilters): Promise<void> {
+		const leaf = await this.showScrybbleFiletree();
+		if (!leaf) return;
+
+		// Small delay to ensure the view is rendered
+		setTimeout(() => {
+			const fileTreeComponent = leaf.containerEl.querySelector('sc-file-tree') as any;
+			if (fileTreeComponent && typeof fileTreeComponent.setSearchFilters === 'function') {
+				fileTreeComponent.setSearchFilters(filters);
+			}
+		}, 100);
 	}
 
 	async authenticatedRequest(url: string, options: any = {}) {
@@ -149,6 +257,18 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 				"Content-Type": "application/json"
 			},
 			body: JSON.stringify({path})
+		})
+		return response.json
+	}
+
+	async fetchSearchFiles(filters: SearchFilters): Promise<SearchResult> {
+		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/search`, {
+			method: "POST",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(filters)
 		})
 		return response.json
 	}

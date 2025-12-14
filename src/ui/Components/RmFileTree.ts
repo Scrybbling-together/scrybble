@@ -19,10 +19,6 @@ export class RmFileTree extends LitElement {
 	render() {
 		return html`
 			<div class="scrybble-filetree">
-				<div class="tree-item-self">
-					<div class="tree-item-inner text-normal">Current directory is <b>${this.tree.cwd}</b></div>
-				</div>
-
 				<div class="files">
 					${this.tree.items.map((fileOrDirectory) => {
 						if (fileOrDirectory.type === "d") {

@@ -43,6 +43,14 @@ export interface Directory extends RMTreeItem {
 
 export type RMFileTree = { items: ReadonlyArray<RMTreeItem>, cwd: string };
 
+export interface SearchFilters {
+	query?: string;
+	starred?: boolean;
+	tags?: string[];
+}
+
+export type SearchResult = { items: ReadonlyArray<RMTreeItem> };
+
 export interface SyncInfo {
 	id: number;
 	completed: boolean;
@@ -112,6 +120,8 @@ export interface ScrybbleApi {
 	fetchSyncDelta(): Promise<ReadonlyArray<SyncDelta>>;
 
 	fetchFileTree(path: string): Promise<RMFileTree>;
+
+	fetchSearchFiles(filters: SearchFilters): Promise<SearchResult>;
 
 	fetchSyncState(sync_id: number): Promise<SyncStateResponse>;
 

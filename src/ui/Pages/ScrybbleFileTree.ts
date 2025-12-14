@@ -1,7 +1,7 @@
 // ScrybbleFileTreeComponent.ts
 import {html, LitElement, nothing} from 'lit-element';
 import {property, state} from 'lit-element/decorators.js';
-import {RMFileTree, ScrybbleCommon} from "../../../@types/scrybble";
+import {RMFileTree, RMTreeItem, ScrybbleCommon, SearchFilters} from "../../../@types/scrybble";
 import {ErrorMessage, Errors} from "../../errorHandling/Errors";
 import {scrybbleContext} from "../scrybbleContext";
 import {consume} from "@lit/context";
@@ -13,10 +13,16 @@ export class ScrybbleFileTreeComponent extends LitElement {
 	scrybble!: ScrybbleCommon;
 
 	@state()
-	private tree!: RMFileTree;
+	private items: ReadonlyArray<RMTreeItem> = [];
+
+	@state()
+	private mode: 'browse' | 'search' = 'browse';
 
 	@state()
 	private cwd = "/";
+
+	@state()
+	private searchFilters: SearchFilters = {};
 
 	@state()
 	private loading: boolean = true;
@@ -30,7 +36,11 @@ export class ScrybbleFileTreeComponent extends LitElement {
 	}
 
 	async refresh() {
-		await this.loadTree();
+		if (this.mode === 'browse') {
+			await this.loadTree();
+		} else {
+			await this.executeSearch(this.searchFilters);
+		}
 		this.requestUpdate();
 	}
 
@@ -43,7 +53,35 @@ export class ScrybbleFileTreeComponent extends LitElement {
 			}
 		} else if (type === "d") {
 			this.cwd = path;
+			this.mode = 'browse';
 			await this.loadTree();
+		}
+	}
+
+	async handleSearch({detail: filters}: CustomEvent<SearchFilters>) {
+		this.searchFilters = filters;
+		await this.executeSearch(filters);
+	}
+
+	async handleClearSearch() {
+		this.mode = 'browse';
+		this.searchFilters = {};
+		await this.loadTree();
+	}
+
+	private async executeSearch(filters: SearchFilters) {
+		try {
+			this.loading = true;
+			this.requestUpdate();
+			const result = await this.scrybble.api.fetchSearchFiles(filters);
+			this.items = result.items;
+			this.mode = 'search';
+			this.error = null;
+		} catch (e) {
+			this.error = Errors.handle("SEARCH_ERROR", e as Error);
+		} finally {
+			this.loading = false;
+			this.requestUpdate();
 		}
 	}
 
@@ -51,7 +89,8 @@ export class ScrybbleFileTreeComponent extends LitElement {
 		try {
 			this.loading = true;
 			this.requestUpdate();
-			this.tree = await this.scrybble.api.fetchFileTree(this.cwd);
+			const tree = await this.scrybble.api.fetchFileTree(this.cwd);
+			this.items = tree.items;
 			this.error = null;
 		} catch (e) {
 			this.error = Errors.handle("TREE_LOADING_ERROR", e as Error);
@@ -59,6 +98,11 @@ export class ScrybbleFileTreeComponent extends LitElement {
 			this.loading = false;
 			this.requestUpdate();
 		}
+	}
+
+	public setSearchFilters(filters: SearchFilters) {
+		this.searchFilters = filters;
+		this.requestUpdate();
 	}
 
 	render() {
@@ -82,17 +126,38 @@ export class ScrybbleFileTreeComponent extends LitElement {
 				</button>
 			</div>`;
 
-		const tree = !this.error && this.tree ? html`
-			<sc-rm-tree .tree="${this.tree}" @rm-click="${this.handleClickFileOrFolder.bind(this)}"></sc-rm-tree>` : nothing;
+		const searchFilter = html`
+			<sc-search-filter
+				.filters="${this.searchFilters}"
+				.isSearchMode="${this.mode === 'search'}"
+				@search="${this.handleSearch.bind(this)}"
+				@clear-search="${this.handleClearSearch.bind(this)}"
+			></sc-search-filter>`;
+
+		const locationIndicator = this.mode === 'browse'
+			? html`<div class="scrybble-location">Current directory is ${this.cwd}</div>`
+			: nothing;
+
+		const tree = !this.error && this.items.length > 0 ? html`
+			<sc-rm-tree .tree="${{items: this.items, cwd: this.cwd}}" @rm-click="${this.handleClickFileOrFolder.bind(this)}"></sc-rm-tree>` : nothing;
+
+		const emptyState = !this.error && !this.loading && this.items.length === 0 ? html`
+			<div class="scrybble-empty-state">
+				${this.mode === 'search' ? 'No files match your search criteria.' : 'This folder is empty.'}
+			</div>` : nothing;
 
 		return html`
 			<div class="inner-container">
 				${heading}
+				${searchFilter}
 				${error}
+				${locationIndicator}
 				${tree}
+				${emptyState}
 			</div>
 		`;
 	}
+
 	protected createRenderRoot(): HTMLElement | DocumentFragment {
 		return this
 	}
