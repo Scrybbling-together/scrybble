@@ -205,7 +205,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 
 		// Small delay to ensure the view is rendered
 		setTimeout(() => {
-			const fileTreeComponent = leaf.containerEl.querySelector('sc-file-tree') as any;
+			const fileTreeComponent = leaf.view.containerEl.querySelector('sc-file-tree') as any;
 			if (fileTreeComponent && typeof fileTreeComponent.setSearchFilters === 'function') {
 				fileTreeComponent.setSearchFilters(filters);
 			}

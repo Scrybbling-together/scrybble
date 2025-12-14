@@ -11,6 +11,8 @@ import {
 	ScrybbleApi,
 	ScrybbleSettings,
 	ScrybbleUser,
+	SearchFilters,
+	SearchResult,
 	SyncDelta,
 	SyncFile
 } from "../../@types/scrybble";
@@ -217,6 +219,11 @@ export class MockScrybbleApi implements ScrybbleApi {
 			success: true,
 			newState: "setup-one-time-code"
 		};
+	}
+
+	async fetchSearchFiles(filters: SearchFilters): Promise<SearchResult> {
+		this.throwIfErrorIsConfigured("fetchSearchFiles");
+		return { items: [] };
 	}
 
 	add_synced_file(filename: string, created_at: string) {
