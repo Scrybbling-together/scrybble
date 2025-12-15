@@ -100,9 +100,9 @@ export class ScrybbleFileTreeComponent extends LitElement {
 		}
 	}
 
-	public setSearchFilters(filters: SearchFilters) {
+	public async setSearchFilters(filters: SearchFilters) {
 		this.searchFilters = filters;
-		this.requestUpdate();
+		await this.executeSearch(filters);
 	}
 
 	render() {

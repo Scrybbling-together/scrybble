@@ -20,13 +20,19 @@ class InputModal extends Modal {
 
 		new Setting(contentEl)
 			.setName("Value")
-			.addText((text) =>
+			.addText((text) => {
 				text
 					.setPlaceholder(this.placeholder)
 					.onChange((value) => {
 						this.result = value;
-					})
-			);
+					});
+				text.inputEl.addEventListener("keydown", (e) => {
+					if (e.key === "Enter") {
+						this.close();
+						this.onSubmit(this.result || null);
+					}
+				});
+			});
 
 		new Setting(contentEl)
 			.addButton((btn) =>
