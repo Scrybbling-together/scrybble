@@ -38,7 +38,7 @@ export class SearchFilter extends LitElement {
 
 	render(): TemplateResult {
 		return html`
-			<div class="search-filter">
+			<form class="search-filter" @submit="${this.handleSubmit}">
 				<div class="search-filter-fields">
 					<div class="search-filter-field">
 						<label for="search-query">Search filenames</label>
@@ -73,8 +73,8 @@ export class SearchFilter extends LitElement {
 				</div>
 				<div class="search-filter-actions">
 					<button
+						type="submit"
 						class="mod-cta"
-						@click="${this.handleSearch}"
 						?disabled="${!this.hasFilters()}"
 					>
 						${getIcon('search')}
@@ -82,6 +82,7 @@ export class SearchFilter extends LitElement {
 					</button>
 					${this.isSearchMode ? html`
 						<button
+							type="button"
 							class="mod-warning"
 							@click="${this.handleClear}"
 						>
@@ -90,7 +91,7 @@ export class SearchFilter extends LitElement {
 						</button>
 					` : nothing}
 				</div>
-			</div>
+			</form>
 		`;
 	}
 
@@ -108,6 +109,11 @@ export class SearchFilter extends LitElement {
 
 	private handleStarredChange(e: Event) {
 		this.starred = (e.target as HTMLInputElement).checked;
+	}
+
+	private handleSubmit(e: Event) {
+		e.preventDefault();
+		this.handleSearch();
 	}
 
 	private hasFilters(): boolean {
