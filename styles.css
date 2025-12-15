@@ -431,6 +431,40 @@ sc-rm-tree {
 	font-size: var(--font-ui-medium);
 }
 
+.scrybble-tree-container {
+	position: relative;
+	flex: 1;
+	min-height: 100px;
+	overflow: auto;
+}
+
+.scrybble-loading-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.14);
+	z-index: 10;
+}
+
+.scrybble-loading-content {
+	position: sticky;
+	top: var(--size-4-8);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-4-2);
+	color: var(--text-muted);
+	font-size: var(--font-ui-medium);
+	text-align: center;
+}
+
+.scrybble-loading-content .svg-icon {
+	color: var(--text-muted);
+}
+
+.scrybble-spinner .svg-icon {
+	animation: spin 1s linear infinite;
+}
+
 sc-support {
 
 	& .contact-section {

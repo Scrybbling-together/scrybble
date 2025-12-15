@@ -19,6 +19,9 @@ export class SearchFilter extends LitElement {
 	@property({type: Boolean})
 	isSearchMode: boolean = false;
 
+	@property({type: Boolean})
+	loading: boolean = false;
+
 	connectedCallback() {
 		super.connectedCallback();
 		this.applyFilters(this.filters);
@@ -75,7 +78,7 @@ export class SearchFilter extends LitElement {
 					<button
 						type="submit"
 						class="mod-cta"
-						?disabled="${!this.hasFilters()}"
+						?disabled="${this.loading || !this.hasFilters()}"
 					>
 						${getIcon('search')}
 						Search
