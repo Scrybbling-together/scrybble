@@ -19,6 +19,9 @@ export class SearchFilter extends LitElement {
 	@property({type: Boolean})
 	isSearchMode: boolean = false;
 
+	@property({type: Boolean})
+	loading: boolean = false;
+
 	connectedCallback() {
 		super.connectedCallback();
 		this.applyFilters(this.filters);
@@ -38,7 +41,7 @@ export class SearchFilter extends LitElement {
 
 	render(): TemplateResult {
 		return html`
-			<div class="search-filter">
+			<form class="search-filter" @submit="${this.handleSubmit}">
 				<div class="search-filter-fields">
 					<div class="search-filter-field">
 						<label for="search-query">Search filenames</label>
@@ -73,15 +76,16 @@ export class SearchFilter extends LitElement {
 				</div>
 				<div class="search-filter-actions">
 					<button
+						type="submit"
 						class="mod-cta"
-						@click="${this.handleSearch}"
-						?disabled="${!this.hasFilters()}"
+						?disabled="${this.loading || !this.hasFilters()}"
 					>
 						${getIcon('search')}
 						Search
 					</button>
 					${this.isSearchMode ? html`
 						<button
+							type="button"
 							class="mod-warning"
 							@click="${this.handleClear}"
 						>
@@ -90,7 +94,7 @@ export class SearchFilter extends LitElement {
 						</button>
 					` : nothing}
 				</div>
-			</div>
+			</form>
 		`;
 	}
 
@@ -108,6 +112,11 @@ export class SearchFilter extends LitElement {
 
 	private handleStarredChange(e: Event) {
 		this.starred = (e.target as HTMLInputElement).checked;
+	}
+
+	private handleSubmit(e: Event) {
+		e.preventDefault();
+		this.handleSearch();
 	}
 
 	private hasFilters(): boolean {

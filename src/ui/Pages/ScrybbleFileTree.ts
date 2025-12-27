@@ -100,18 +100,26 @@ export class ScrybbleFileTreeComponent extends LitElement {
 		}
 	}
 
-	public setSearchFilters(filters: SearchFilters) {
+	public async setSearchFilters(filters: SearchFilters) {
 		this.searchFilters = filters;
-		this.requestUpdate();
+		await this.executeSearch(filters);
 	}
 
 	render() {
-		const error = this.error ? html`
-			<div class="scrybble-error">
-				<h3>${this.error.title}</h3>
-				<p>${this.error.message}</p>
-				<p>${this.error.helpAction}</p>
-			</div>` : nothing;
+		if (this.error) {
+			return html`
+				<div class="inner-container">
+					<div class="scrybble-header">
+						<h3>reMarkable file tree</h3>
+					</div>
+					<div class="scrybble-error">
+						<h3>${this.error.title}</h3>
+						<p>${this.error.message}</p>
+						<p>${this.error.helpAction}</p>
+					</div>
+				</div>
+			`;
+		}
 
 		const heading = html`
 			<div class="scrybble-header">
@@ -122,7 +130,7 @@ export class ScrybbleFileTreeComponent extends LitElement {
 					class="mod-cta scrybble-refresh-button"
 				>
 					<span class="tree-item-icon scrybble-icon">${getIcon('refresh-ccw')}</span>
-					${this.loading ? "Loading..." : "Refresh"}
+					Refresh
 				</button>
 			</div>`;
 
@@ -130,18 +138,27 @@ export class ScrybbleFileTreeComponent extends LitElement {
 			<sc-search-filter
 				.filters="${this.searchFilters}"
 				.isSearchMode="${this.mode === 'search'}"
+				.loading="${this.loading}"
 				@search="${this.handleSearch.bind(this)}"
 				@clear-search="${this.handleClearSearch.bind(this)}"
 			></sc-search-filter>`;
+
+		const loadingOverlay = this.loading ? html`
+			<div class="scrybble-loading-overlay">
+				<div class="scrybble-loading-content">
+					<span class="tree-item-icon scrybble-icon scrybble-spinner">${getIcon('loader')}</span>
+					Loading...
+				</div>
+			</div>` : nothing;
 
 		const locationIndicator = this.mode === 'browse'
 			? html`<div class="scrybble-location">Current directory is ${this.cwd}</div>`
 			: nothing;
 
-		const tree = !this.error && this.items.length > 0 ? html`
+		const tree = this.items.length > 0 ? html`
 			<sc-rm-tree .tree="${{items: this.items, cwd: this.cwd}}" @rm-click="${this.handleClickFileOrFolder.bind(this)}"></sc-rm-tree>` : nothing;
 
-		const emptyState = !this.error && !this.loading && this.items.length === 0 ? html`
+		const emptyState = !this.loading && this.items.length === 0 ? html`
 			<div class="scrybble-empty-state">
 				${this.mode === 'search' ? 'No files match your search criteria.' : 'This folder is empty.'}
 			</div>` : nothing;
@@ -150,10 +167,12 @@ export class ScrybbleFileTreeComponent extends LitElement {
 			<div class="inner-container">
 				${heading}
 				${searchFilter}
-				${error}
 				${locationIndicator}
-				${tree}
-				${emptyState}
+				<div class="scrybble-tree-container">
+					${loadingOverlay}
+					${tree}
+					${emptyState}
+				</div>
 			</div>
 		`;
 	}
