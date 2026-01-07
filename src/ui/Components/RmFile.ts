@@ -174,7 +174,7 @@ Click to download file to your vault`}">
 
 	private _handleClick() {
 		this.dispatchEvent(new CustomEvent('rm-click', {
-			detail: {name: this.file.name, path: this.file.path, type: 'f'},
+			detail: {name: this.file.name, path: this.file.path, type: 'f', id: this.file.id},
 			bubbles: true,
 			composed: true
 		}));

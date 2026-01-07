@@ -44,10 +44,14 @@ export class ScrybbleFileTreeComponent extends LitElement {
 		this.requestUpdate();
 	}
 
-	async handleClickFileOrFolder({detail: {path, type}}: any) {
+	async handleClickFileOrFolder({detail: {path, type, id, name}}: any) {
 		if (type === "f") {
 			try {
-				this.scrybble.sync.requestSync(path)
+				if (!id) {
+					Errors.handle("REQUEST_FILE_SYNC_ERROR", new Error("File ID is required for sync"))
+					return;
+				}
+				this.scrybble.sync.requestSync(id, name)
 			} catch (e) {
 				Errors.handle("REQUEST_FILE_SYNC_ERROR", e as Error)
 			}

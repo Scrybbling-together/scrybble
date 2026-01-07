@@ -8,7 +8,7 @@ import path from "path";
 import {pino} from "./errorHandling/logging";
 
 export interface ISyncQueue {
-	requestSync(filename: string): void;
+	requestSync(rmFileId: string, name: string): void;
 
 	subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates, job: SyncJob) => void): void;
 
@@ -80,10 +80,10 @@ export class SyncQueue implements ISyncQueue {
 		this.syncJobs.push(syncJob)
 	}
 
-	requestSync(filename: string) {
-		pino.info(`Creating sync job for file '${filename}' requested by the user`)
-		const job = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), filename)
-		pino.info(`Sync job for file '${filename}' requested by the user is successfully created, will now be queued`)
+	requestSync(rmFileId: string, name: string) {
+		pino.info(`Creating sync job for file '${name}' (id: ${rmFileId}) requested by the user`)
+		const job = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), name, rmFileId)
+		pino.info(`Sync job for file '${name}' requested by the user is successfully created, will now be queued`)
 		this.syncJobs.push(job)
 	}
 
@@ -191,7 +191,10 @@ export class SyncQueue implements ISyncQueue {
 	private async requestFileToBeSynced(job: SyncJob) {
 		try {
 			await job.syncRequestSent()
-			const response = await this.api.fetchRequestFileToBeSynced(job.filename)
+			if (!job.rmFileId) {
+				throw new Error('rmFileId is required for sync requests')
+			}
+			const response = await this.api.fetchRequestFileToBeSynced(job.rmFileId, job.filename)
 			await job.syncRequestConfirmed(response.sync_id)
 		} catch (e) {
 			// if it's a 400, assume the sync job is not posted.

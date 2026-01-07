@@ -46,7 +46,8 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 		key: number = 0,
 		init: SyncJobStates.init = SyncJobStates.init,
 		private onStateChange: (filename: string, newState: SyncJobStates, job: SyncJob) => void,
-		public filename: string
+		public filename: string,
+		public rmFileId?: string
 	) {
 		super(init, [], console);
 

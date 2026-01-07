@@ -31,6 +31,7 @@ export interface RMTreeItem {
 	type: 'f' | 'd'
 	name: string
 	path: string
+	id?: string
 }
 
 export interface File extends RMTreeItem {
@@ -63,6 +64,7 @@ export interface SyncFile {
 	path: string;
 	sync: null | SyncInfo;
 	type: "f" | "d";
+	id?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -125,7 +127,7 @@ export interface ScrybbleApi {
 
 	fetchSyncState(sync_id: number): Promise<SyncStateResponse>;
 
-	fetchRequestFileToBeSynced(filePath: string): Promise<{ sync_id: number; filename: string; }>;
+	fetchRequestFileToBeSynced(rmFileId: string, name: string): Promise<{ sync_id: number; filename: string; }>;
 
 	fetchOnboardingState(): Promise<OnboardingState>;
 

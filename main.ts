@@ -292,7 +292,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		return response.json
 	}
 
-	async fetchRequestFileToBeSynced(filePath: string): Promise<{ sync_id: number; filename: string; }> {
+	async fetchRequestFileToBeSynced(rmFileId: string, name: string): Promise<{ sync_id: number; filename: string; }> {
 		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/file`, {
 			method: "POST",
 			headers: {
@@ -300,7 +300,8 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 				"accept": "application/json",
 			},
 			body: JSON.stringify({
-				file: filePath
+				rmFileId,
+				name,
 			})
 		});
 
