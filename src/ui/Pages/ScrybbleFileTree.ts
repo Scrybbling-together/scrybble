@@ -51,7 +51,7 @@ export class ScrybbleFileTreeComponent extends LitElement {
 					Errors.handle("REQUEST_FILE_SYNC_ERROR", new Error("File ID is required for sync"))
 					return;
 				}
-				this.scrybble.sync.requestSync(id, name)
+				this.scrybble.sync.requestSync(id, path)
 			} catch (e) {
 				Errors.handle("REQUEST_FILE_SYNC_ERROR", e as Error)
 			}
