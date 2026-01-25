@@ -95,10 +95,7 @@ export class SyncQueue implements ISyncQueue {
 		try {
 			this.onStartDownloadFile(job)
 			await job.startDownload()
-			return await requestUrl({
-				method: "GET",
-				url: job.download_url!
-			}).arrayBuffer
+			return this.api.downloadSyncedDocument(job.download_url!)
 		} catch (e) {
 			this.onFinishedDownloadFile(job, false, e as Error)
 			Errors.handle("FILE_DOWNLOAD_ERROR", e as Error)
@@ -205,6 +202,7 @@ export class SyncQueue implements ISyncQueue {
 	private async checkProcessingState(job: SyncJob) {
 		await job.sentProcessingRequest()
 		const state = await this.api.fetchSyncState(job.sync_id!)
+		console.log(state)
 		if (state.completed) {
 			await job.readyToDownload(state.download_url, state.id)
 		} else if (state.error) {

@@ -1,4 +1,27 @@
 import {App, Modal, Plugin, requestUrl, Setting, WorkspaceLeaf} from 'obsidian';
+import {
+	AuthenticateWithGumroadLicenseResponse,
+	DeviceCodeResponse,
+	DeviceTokenResponse,
+	FeedbackFormDetails,
+	OneTimeCodeResponse,
+	ResetConnectionResponse,
+	RMFileTree,
+	ScrybbleApi,
+	ScrybblePersistentStorage,
+	ScrybbleSettings,
+	ScrybbleUser,
+	SearchFilters,
+	SearchResult,
+	SyncDelta,
+} from "./@types/scrybble";
+import {Settings} from "./src/settings";
+import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
+import loadLitComponents from "./src/ui/loadComponents";
+import {SyncQueue} from "./src/SyncQueue";
+import {Authentication} from "./src/Authentication";
+import {SettingsImpl} from "./src/SettingsImpl";
+import {pino} from "./src/errorHandling/logging";
 
 class InputModal extends Modal {
 	private result: string = "";
@@ -59,29 +82,6 @@ class InputModal extends Modal {
 		contentEl.empty();
 	}
 }
-import {
-	AuthenticateWithGumroadLicenseResponse,
-	DeviceCodeResponse,
-	DeviceTokenResponse,
-	FeedbackFormDetails,
-	OneTimeCodeResponse,
-	ResetConnectionResponse,
-	RMFileTree,
-	ScrybbleApi,
-	ScrybblePersistentStorage,
-	ScrybbleSettings,
-	ScrybbleUser,
-	SearchFilters,
-	SearchResult,
-	SyncDelta,
-} from "./@types/scrybble";
-import {Settings} from "./src/settings";
-import {SCRYBBLE_VIEW, ScrybbleView} from "./src/ScrybbleView";
-import loadLitComponents from "./src/ui/loadComponents";
-import {SyncQueue} from "./src/SyncQueue";
-import {Authentication} from "./src/Authentication";
-import {SettingsImpl} from "./src/SettingsImpl";
-import {pino} from "./src/errorHandling/logging";
 
 export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePersistentStorage {
 	// @ts-expect-error TS2564 -- onload acts as a constructor.
@@ -196,26 +196,6 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		}
 
 		return leaf;
-	}
-
-	private async promptForInput(title: string, placeholder: string): Promise<string | null> {
-		return new Promise((resolve) => {
-			const modal = new InputModal(this.app, title, placeholder, resolve);
-			modal.open();
-		});
-	}
-
-	private async openWithSearchFilters(filters: SearchFilters): Promise<void> {
-		const leaf = await this.showScrybbleFiletree();
-		if (!leaf) return;
-
-		// Small delay to ensure the view is rendered
-		setTimeout(() => {
-			const fileTreeComponent = leaf.view.containerEl.querySelector('sc-file-tree') as any;
-			if (fileTreeComponent && typeof fileTreeComponent.setSearchFilters === 'function') {
-				fileTreeComponent.setSearchFilters(filters);
-			}
-		}, 100);
 	}
 
 	async authenticatedRequest(url: string, options: any = {}) {
@@ -431,6 +411,13 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		});
 	}
 
+	async downloadSyncedDocument(downloadUrl: string): Promise<ArrayBuffer> {
+		const res = await this.authenticatedRequest(downloadUrl, {
+			method: "GET",
+		})
+		return res.arrayBuffer
+	}
+
 	async deleteRemarkableConnection(): Promise<ResetConnectionResponse> {
 		const response = await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/remarkable-connection`, {
 			method: "DELETE",
@@ -440,6 +427,26 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		});
 
 		return response.json;
+	}
+
+	private async promptForInput(title: string, placeholder: string): Promise<string | null> {
+		return new Promise((resolve) => {
+			const modal = new InputModal(this.app, title, placeholder, resolve);
+			modal.open();
+		});
+	}
+
+	private async openWithSearchFilters(filters: SearchFilters): Promise<void> {
+		const leaf = await this.showScrybbleFiletree();
+		if (!leaf) return;
+
+		// Small delay to ensure the view is rendered
+		setTimeout(() => {
+			const fileTreeComponent = leaf.view.containerEl.querySelector('sc-file-tree') as any;
+			if (fileTreeComponent && typeof fileTreeComponent.setSearchFilters === 'function') {
+				fileTreeComponent.setSearchFilters(filters);
+			}
+		}, 100);
 	}
 
 	private async checkAccountStatus() {

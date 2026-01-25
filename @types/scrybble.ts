@@ -145,6 +145,8 @@ export interface ScrybbleApi {
 	fetchGiveFeedback(details: FeedbackFormDetails): Promise<void>;
 
 	deleteRemarkableConnection(): Promise<ResetConnectionResponse>;
+
+	downloadSyncedDocument(downloadUrl: string): Promise<ArrayBuffer>;
 }
 
 export interface ScrybblePersistentStorage {
