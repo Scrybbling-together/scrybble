@@ -36,6 +36,10 @@ export class MockScrybbleApi implements ScrybbleApi {
 	constructor(private settings: ScrybbleSettings) {
 	}
 
+	downloadSyncedDocument(downloadUrl: string): Promise<ArrayBuffer> {
+        throw new Error("Method not implemented.");
+    }
+
 	public accessTokenIsExpired() {
 		this.accessTokenExpired = true;
 	}
