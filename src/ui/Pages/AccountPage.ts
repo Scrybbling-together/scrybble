@@ -41,6 +41,7 @@ export class AccountPage extends LitElement {
 
 	disconnectedCallback() {
 		super.disconnectedCallback();
+		this.scrybble.authentication.removeStateChangeListener(this.stateChangeHandler);
 	}
 
 	render(): TemplateResult {

@@ -150,6 +150,13 @@ export class Authentication extends StateMachine<AuthStates, AuthEvents> {
 		this.listeners.push(listener);
 	}
 
+	removeStateChangeListener(listener: (new_state: AuthStates) => void) {
+		const index = this.listeners.indexOf(listener);
+		if (index > -1) {
+			this.listeners.splice(index, 1);
+		}
+	}
+
 	public async initializeAuth(): Promise<void> {
 		if (this.settings.access_token) {
 			await this.dispatch(AuthEvents.TOKEN_FOUND_ON_STARTUP);
