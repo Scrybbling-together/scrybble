@@ -20,6 +20,7 @@ export class SyncQueue implements ISyncQueue {
 
 	private readonly busyStates = [SyncJobStates.downloading, SyncJobStates.awaiting_processing];
 	private syncJobStateChangeListeners: Map<string, ((newState: SyncJobStates, job: SyncJob) => void)[]> = new Map();
+	private intervalId: number | null = null;
 
 	constructor(
 		private settings: ScrybbleSettings,
@@ -28,7 +29,7 @@ export class SyncQueue implements ISyncQueue {
 		private onStartDownloadFile: (job: SyncJob) => void,
 		private onFinishedDownloadFile: (job: SyncJob, success: boolean, error?: Error | ResponseError) => void,
 	) {
-		setInterval(async () => {
+		this.intervalId = window.setInterval(async () => {
 			const maxActiveJobs = 3
 			let busy = this.countBusyJobs();
 			for (let job of this.syncJobs) {
@@ -49,6 +50,13 @@ export class SyncQueue implements ISyncQueue {
 				}
 			}
 		}, 2000)
+	}
+
+	public stop(): void {
+		if (this.intervalId !== null) {
+			window.clearInterval(this.intervalId);
+			this.intervalId = null;
+		}
 	}
 
 	syncjobStateChangeListener(path: string, newState: SyncJobStates, job: SyncJob) {

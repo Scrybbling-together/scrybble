@@ -174,6 +174,13 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		this.app.workspace.onLayoutReady(this.checkAccountStatus.bind(this));
 	}
 
+	onunload() {
+		pino.info("Unloading Scrybble plugin");
+
+		// Stop the sync queue interval
+		this.syncQueue.stop();
+	}
+
 	async showScrybbleFiletree(): Promise<WorkspaceLeaf | null> {
 		const {workspace} = this.app;
 
