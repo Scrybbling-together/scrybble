@@ -402,7 +402,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	}
 
 	async fetchGiveFeedback(details: FeedbackFormDetails): Promise<void> {
-		this.authenticatedRequest(`${this.settings.endpoint}/api/sync/remarkable-document-share`, {
+		await this.authenticatedRequest(`${this.settings.endpoint}/api/sync/remarkable-document-share`, {
 			method: "POST",
 			headers: {
 				'Content-Type': 'application/json',
