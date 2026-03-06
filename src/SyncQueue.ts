@@ -194,6 +194,7 @@ export class SyncQueue implements ISyncQueue {
 			const response = await this.api.fetchRequestFileToBeSynced(job.rmFileId, job.filename)
 			await job.syncRequestConfirmed(response.sync_id)
 		} catch (e) {
+			await job.downloadingFailed()
 			// if it's a 400, assume the sync job is not posted.
 			// if it's a timeout or connection error, we don't know what happened.
 		}
