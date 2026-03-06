@@ -100,7 +100,7 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 				this.onStateChange(this.filename, SyncJobStates.downloading, this);
 				notice.updateState(SyncJobStates.downloading);
 			}),
-			t(SyncJobStates.downloading, SyncJobEvents.downloadFailed, SyncJobStates.downloaded, () => {
+			t(SyncJobStates.downloading, SyncJobEvents.downloadFailed, SyncJobStates.failed_to_download, () => {
 				this.onStateChange(this.filename, SyncJobStates.failed_to_download, this);
 				notice.updateState(SyncJobStates.failed_to_download);
 			}),
