@@ -209,6 +209,36 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		});
 	}
 
+	/**
+	 * Validate a requestUrl response before reading `.json`. Obsidian's `requestUrl`
+	 * exposes `.json` as a getter that calls JSON.parse(); if the body is not JSON
+	 * (an HTML login/error page, a proxy/redirect page, etc.) that throws an opaque
+	 * SyntaxError ("Unexpected token '<'") deep in the auth flow. Fail with a clear,
+	 * actionable error instead.
+	 *
+	 * `allowErrorStatus` keeps the content-type guard but tolerates a non-2xx status:
+	 * the OAuth device-token poll, for example, legitimately returns 400 with a JSON
+	 * `{ "error": "authorization_pending" }` body that the caller must inspect.
+	 */
+	private expectJson(
+		response: { status: number; headers: Record<string, string>; json: any; text: string },
+		context: string,
+		{ allowErrorStatus = false }: { allowErrorStatus?: boolean } = {}
+	): any {
+		const contentType = (response.headers?.["content-type"] ?? response.headers?.["Content-Type"] ?? "").toLowerCase();
+		const isJson = contentType.includes("application/json");
+		if (!isJson || (!allowErrorStatus && response.status >= 400)) {
+			const err = new Error(
+				`${context}: the Scrybble server returned status ${response.status} ` +
+				`with content-type "${contentType || "unknown"}" instead of JSON. ` +
+				`If you are self-hosting, check that your server URL is correct and the server is reachable.`
+			) as Error & { status: number };
+			err.status = response.status;
+			throw err;
+		}
+		return response.json;
+	}
+
 	async sync() {
 		const latestSyncState = await this.fetchSyncDelta()
 		const settings = this.settings
@@ -232,7 +262,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 				"Accept": "application/json",
 			}
 		})
-		return response.json
+		return this.expectJson(response, "Fetching sync delta")
 	}
 
 	async fetchFileTree(path: string = "/"): Promise<RMFileTree> {
@@ -244,7 +274,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			},
 			body: JSON.stringify({path})
 		})
-		return response.json
+		return this.expectJson(response, "Loading file tree")
 	}
 
 	async fetchSearchFiles(filters: SearchFilters): Promise<SearchResult> {
@@ -297,7 +327,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			}
 		});
 
-		return response.json
+		return this.expectJson(response, "Fetching onboarding state")
 	}
 
 	async fetchGetUser(): Promise<ScrybbleUser> {
@@ -308,7 +338,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			}
 		});
 
-		return {...response.json};
+		return {...this.expectJson(response, "Fetching user")};
 	}
 
 	async fetchDeviceCode(): Promise<DeviceCodeResponse> {
@@ -325,7 +355,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			}).toString(),
 		});
 
-		const data = response.json;
+		const data = this.expectJson(response, "Requesting device code");
 
 		// Validate response structure
 		if (!data.device_code || !data.user_code || !data.verification_uri) {
@@ -352,7 +382,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			throw: false
 		});
 
-		return response.json;
+		return this.expectJson(response, "Polling for device token", { allowErrorStatus: true });
 	}
 
 	public async fetchRefreshOAuthAccessToken(): Promise<{ access_token: string, refresh_token: string }> {
@@ -373,7 +403,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			body: formData.toString()
 		})
 
-		return response.json;
+		return this.expectJson(response, "Refreshing access token", { allowErrorStatus: true });
 	}
 
 	async sendGumroadLicense(license: string): Promise<AuthenticateWithGumroadLicenseResponse> {
