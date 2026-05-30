@@ -15,6 +15,11 @@ export interface ScrybbleSettings {
 	custom_host: Host;
 	sync_state: Record<string, number>;
 
+	auto_sync: boolean;
+	auto_sync_interval_minutes: number;
+	auto_sync_baselined: boolean;
+	auto_sync_seen: string[];
+
 	access_token?: string;
 	refresh_token?: string;
 

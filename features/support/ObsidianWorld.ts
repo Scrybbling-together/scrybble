@@ -36,7 +36,11 @@ export class ObsidianWorld extends World {
 				client_id: ""
 			},
 
-			self_hosted: false
+			self_hosted: false,
+			auto_sync: false,
+			auto_sync_interval_minutes: 15,
+			auto_sync_baselined: false,
+			auto_sync_seen: []
 		}, () => {
 			return Promise.resolve();
 		});

@@ -1,4 +1,4 @@
-import {App, Modal, Plugin, requestUrl, Setting, WorkspaceLeaf} from 'obsidian';
+import {App, Modal, Notice, Plugin, requestUrl, Setting, WorkspaceLeaf} from 'obsidian';
 import {
 	AuthenticateWithGumroadLicenseResponse,
 	DeviceCodeResponse,
@@ -83,6 +83,8 @@ class InputModal extends Modal {
 	}
 }
 
+const AUTO_SYNC_MAX_PER_TICK = 10;
+
 export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePersistentStorage {
 	// @ts-expect-error TS2564 -- onload acts as a constructor.
 	public settings: ScrybbleSettings;
@@ -90,6 +92,8 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	public syncQueue: SyncQueue;
 	// @ts-expect-error TS2564 -- onload acts as a constructor.
 	public authentication: Authentication;
+
+	private autoSyncTimer: number | null = null;
 
 	get access_token(): string | null {
 		return this.settings.access_token ?? null;
@@ -453,6 +457,137 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		await this.authentication.initializeAuth();
 		if (this.authentication.isAuthenticated()) {
 			await this.sync();
+			this.startAutoSync();
+		}
+	}
+
+	startAutoSync(): void {
+		this.stopAutoSync();
+		if (!this.settings.self_hosted || !this.settings.auto_sync || !this.authentication.isAuthenticated()) {
+			return;
+		}
+		const minutes = Math.max(1, this.settings.auto_sync_interval_minutes || 15);
+		this.autoSyncTimer = window.setInterval(() => {
+			void this.autoSyncScan();
+		}, minutes * 60_000);
+		this.registerInterval(this.autoSyncTimer);
+
+		// Snapshot the existing library right away the first time it's enabled, so the
+		// backlog is baselined immediately instead of after a full interval.
+		if (!this.settings.auto_sync_baselined) {
+			void this.autoSyncScan();
+		}
+	}
+
+	stopAutoSync(): void {
+		if (this.autoSyncTimer !== null) {
+			window.clearInterval(this.autoSyncTimer);
+			this.autoSyncTimer = null;
+		}
+	}
+
+	async resetAutoSyncBaseline(): Promise<void> {
+		this.settings.auto_sync_baselined = false;
+		this.settings.auto_sync_seen = [];
+		await this.settings.save();
+		new Notice("Scrybble: auto-sync baseline reset. Your current library is the new starting point.");
+		this.startAutoSync();
+	}
+
+	async syncEntireLibrary(): Promise<void> {
+		if (!this.authentication.isAuthenticated()) {
+			new Notice("Scrybble: sign in before syncing your library.");
+			return;
+		}
+		new Notice("Scrybble: scanning your reMarkable library...");
+		const files: { path: string; id: string }[] = [];
+		await this.collectRemarkableFiles("/", new Set<string>(), files);
+
+		const seen = new Set(this.settings.auto_sync_seen);
+		let queued = 0;
+		for (const f of files) {
+			if (f.path in this.settings.sync_state) {
+				continue;
+			}
+			seen.add(f.path);
+			this.syncQueue.requestSync(f.id, f.path);
+			queued += 1;
+		}
+		this.settings.auto_sync_seen = Array.from(seen);
+		this.settings.auto_sync_baselined = true;
+		await this.settings.save();
+		new Notice(`Scrybble: queued ${queued} file(s) for sync.`);
+	}
+
+	private async autoSyncScan(): Promise<void> {
+		if (!this.settings.self_hosted || !this.settings.auto_sync || !this.authentication.isAuthenticated()) {
+			return;
+		}
+		try {
+			const files: { path: string; id: string }[] = [];
+			await this.collectRemarkableFiles("/", new Set<string>(), files);
+
+			if (!this.settings.auto_sync_baselined) {
+				const seen = new Set(this.settings.auto_sync_seen);
+				for (const f of files) {
+					seen.add(f.path);
+				}
+				this.settings.auto_sync_seen = Array.from(seen);
+				const delta = await this.fetchSyncDelta();
+				for (const d of delta) {
+					if (!(d.filename in this.settings.sync_state)) {
+						this.settings.sync_state[d.filename] = d.id;
+					}
+				}
+				this.settings.auto_sync_baselined = true;
+				await this.settings.save();
+				return;
+			}
+
+			await this.sync();
+
+			const seen = new Set(this.settings.auto_sync_seen);
+			let requested = 0;
+			for (const f of files) {
+				if (requested >= AUTO_SYNC_MAX_PER_TICK) {
+					break;
+				}
+				if (seen.has(f.path) || f.path in this.settings.sync_state) {
+					continue;
+				}
+				seen.add(f.path);
+				this.syncQueue.requestSync(f.id, f.path);
+				requested += 1;
+			}
+			if (requested > 0) {
+				this.settings.auto_sync_seen = Array.from(seen);
+				await this.settings.save();
+			}
+		} catch (e) {
+			pino.error(e, "Automatic sync scan failed");
+		}
+	}
+
+	private async collectRemarkableFiles(path: string, visited: Set<string>, acc: { path: string; id: string }[]): Promise<void> {
+		if (visited.has(path)) {
+			return;
+		}
+		visited.add(path);
+
+		let tree: RMFileTree;
+		try {
+			tree = await this.fetchFileTree(path);
+		} catch (e) {
+			pino.error(e, `Automatic sync could not list "${path}"`);
+			return;
+		}
+
+		for (const item of tree.items) {
+			if (item.type === "d") {
+				await this.collectRemarkableFiles(item.path, visited, acc);
+			} else if (item.type === "f" && item.id) {
+				acc.push({ path: item.path, id: item.id });
+			}
 		}
 	}
 }
