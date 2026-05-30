@@ -213,7 +213,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 		});
 	}
 
-	async sync() {
+	async sync(auto: boolean = false) {
 		const latestSyncState = await this.fetchSyncDelta()
 		const settings = this.settings
 
@@ -224,7 +224,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			const file_not_synced_locally = !(filename in settings.sync_state);
 			const file_has_update = settings.sync_state[filename] < id;
 			if (file_not_synced_locally || file_has_update) {
-				await this.syncQueue.downloadProcessedFile(filename, download_url, id)
+				await this.syncQueue.downloadProcessedFile(filename, download_url, id, auto)
 			}
 		}
 	}
@@ -487,6 +487,9 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	}
 
 	async resetAutoSyncBaseline(): Promise<void> {
+		if (!this.settings.self_hosted) {
+			return;
+		}
 		this.settings.auto_sync_baselined = false;
 		this.settings.auto_sync_seen = [];
 		await this.settings.save();
@@ -495,6 +498,9 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 	}
 
 	async syncEntireLibrary(): Promise<void> {
+		if (!this.settings.self_hosted) {
+			return;
+		}
 		if (!this.authentication.isAuthenticated()) {
 			new Notice("Scrybble: sign in before syncing your library.");
 			return;
@@ -510,7 +516,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 				continue;
 			}
 			seen.add(f.path);
-			this.syncQueue.requestSync(f.id, f.path);
+			this.syncQueue.requestSync(f.id, f.path, true);
 			queued += 1;
 		}
 		this.settings.auto_sync_seen = Array.from(seen);
@@ -544,7 +550,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 				return;
 			}
 
-			await this.sync();
+			await this.sync(true);
 
 			const seen = new Set(this.settings.auto_sync_seen);
 			let requested = 0;
@@ -556,7 +562,7 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 					continue;
 				}
 				seen.add(f.path);
-				this.syncQueue.requestSync(f.id, f.path);
+				this.syncQueue.requestSync(f.id, f.path, true);
 				requested += 1;
 			}
 			if (requested > 0) {

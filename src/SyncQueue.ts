@@ -8,7 +8,7 @@ import path from "path";
 import {pino} from "./errorHandling/logging";
 
 export interface ISyncQueue {
-	requestSync(rmFileId: string, name: string): void;
+	requestSync(rmFileId: string, name: string, auto?: boolean): void;
 
 	subscribeToSyncStateChangesForFile(path: string, callback: (newState: SyncJobStates, job: SyncJob) => void): void;
 
@@ -72,17 +72,17 @@ export class SyncQueue implements ISyncQueue {
 		this.syncJobStateChangeListeners.delete(path);
 	}
 
-	async downloadProcessedFile(filename: string, download_url: string, sync_id: number) {
+	async downloadProcessedFile(filename: string, download_url: string, sync_id: number, auto: boolean = false) {
 		pino.info(`Creating sync job for file '${filename}' from the sync delta`)
-		const syncJob = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), filename);
+		const syncJob = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), filename, undefined, auto);
 		pino.info(`Sync job for file '${filename}' from sync delta is successfully created, will now be queued`)
 		await syncJob.readyToDownload(download_url, sync_id)
 		this.syncJobs.push(syncJob)
 	}
 
-	requestSync(rmFileId: string, name: string) {
+	requestSync(rmFileId: string, name: string, auto: boolean = false) {
 		pino.info(`Creating sync job for file '${name}' (id: ${rmFileId}) requested by the user`)
-		const job = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), name, rmFileId)
+		const job = new SyncJob(0, SyncJobStates.init, this.syncjobStateChangeListener.bind(this), name, rmFileId, auto)
 		pino.info(`Sync job for file '${name}' requested by the user is successfully created, will now be queued`)
 		this.syncJobs.push(job)
 	}
@@ -103,6 +103,20 @@ export class SyncQueue implements ISyncQueue {
 		}
 	}
 
+	private hasNoHandwriting(unzippedFiles: Record<string, Uint8Array>): boolean {
+		const meta = Object.keys(unzippedFiles).find(filename => /_scrybble\.json$/.test(filename));
+		if (!meta) {
+			// No sidecar (older renderer): can't tell, so don't skip.
+			return false;
+		}
+		try {
+			const parsed = JSON.parse(new TextDecoder().decode(unzippedFiles[meta]));
+			return parsed.annotation_pages === 0;
+		} catch {
+			return false;
+		}
+	}
+
 	private async writeDownloadedZip(job: SyncJob, file: ArrayBuffer) {
 		let relativePath = dirPath(job.filename)
 		let nameOfFile = sanitizeFilename(basename(job.filename))
@@ -120,7 +134,14 @@ export class SyncQueue implements ISyncQueue {
 					else resolve(unzipped);
 				});
 			});
-			
+
+			if (job.auto && this.settings.self_hosted && this.hasNoHandwriting(unzippedFiles)) {
+				pino.info(`Auto-sync: skipping '${job.filename}', no handwriting`)
+				await job.downloaded()
+				this.onFinishedDownloadFile(job, true)
+				return
+			}
+
 			await this.extractFileFromZip(this.vault, unzippedFiles, /_remarks(-only)?.pdf/, `${out_path}.pdf`)
 			await this.extractFileFromZip(this.vault, unzippedFiles, /_obsidian.md/, `${out_path}.md`, false)
 			await job.downloaded()
