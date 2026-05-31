@@ -1,4 +1,5 @@
 import {StateMachine, t} from "typescript-fsm";
+import {Notice} from "obsidian";
 import {SyncProgressNotice} from "./ui/Components/SyncNotice";
 
 export enum SyncJobStates {
@@ -143,7 +144,10 @@ export class SyncJob extends StateMachine<SyncJobStates, SyncJobEvents> {
 		await this.dispatch(SyncJobEvents.downloadRequestSent)
 	}
 
-	async processingFailed() {
+	async processingFailed(errorMessage?: string | null) {
+		if (errorMessage) {
+			new Notice(`Scrybble couldn't sync "${this.filename}": ${errorMessage}`, 10000);
+		}
 		await this.dispatch(SyncJobEvents.failedToProcess);
 	}
 

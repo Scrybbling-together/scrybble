@@ -206,7 +206,7 @@ export class SyncQueue implements ISyncQueue {
 		if (state.completed) {
 			await job.readyToDownload(state.download_url, state.id)
 		} else if (state.error) {
-			await job.processingFailed()
+			await job.processingFailed(state.error_message)
 		} else {
 			await job.fileStillProcessing()
 		}

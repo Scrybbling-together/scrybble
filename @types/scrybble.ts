@@ -111,6 +111,7 @@ type SyncStateSuccess  = {
 type SyncStateError = {
 	error: true;
 	completed: false;
+	error_message?: string | null;
 }
 
 export type SyncStateResponse = {
