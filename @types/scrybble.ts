@@ -217,6 +217,7 @@ export type ScrybbleUser = {
 		id: number;
 	},
 	onboarding_state: OnboardingState;
+	rmapi_host?: string | null;
 	subscription_status: GumroadLicenseResponse | null;
 	total_syncs: number;
 }

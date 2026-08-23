@@ -232,6 +232,11 @@ export class ScrybbleOnboarding extends LitElement {
 		`;
 	}
 
+	private get oneTimeCodeUrl(): string {
+		const host = this.scrybble.authentication.user?.rmapi_host;
+		return host ? `${host}/connect` : "https://my.remarkable.com/device/desktop/connect";
+	}
+
 	private renderOneTimeCode(firstTime: boolean): TemplateResult {
 		return html`
 			<div class="account-card">
@@ -254,7 +259,7 @@ export class ScrybbleOnboarding extends LitElement {
 						Retrieve your
 						<a
 							target="_blank"
-							href="https://my.remarkable.com/device/desktop/connect"
+							href=${this.oneTimeCodeUrl}
 							class="onboarding-link"
 						>
 							one-time-code
