@@ -210,6 +210,8 @@ export default class Scrybble extends Plugin implements ScrybbleApi, ScrybblePer
 			...options,
 			url,
 			headers: {
+				"Cache-Control": "no-cache",
+				"Pragma": "no-cache",
 				...options.headers,
 				"Authorization": `Bearer ${this.access_token}`
 			}
