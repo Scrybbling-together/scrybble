@@ -10,6 +10,11 @@ export class SettingsImpl implements ScrybbleSettings {
 	}
 	public readonly sync_state: Record<string, number>  = {}
 
+	public readonly auto_sync: boolean = false;
+	public readonly auto_sync_interval_minutes: number = 15;
+	public readonly auto_sync_baselined: boolean = false;
+	public readonly auto_sync_seen: string[] = [];
+
 	public readonly refresh_token?: string;
 	public readonly access_token?: string;
 	public readonly save: () => Promise<void>;
@@ -18,6 +23,10 @@ export class SettingsImpl implements ScrybbleSettings {
 		this.sync_folder = s?.sync_folder ?? "scrybble/";
 		this.sync_state = s?.sync_state ?? {};
 		this.self_hosted = s?.self_hosted ?? false;
+		this.auto_sync = s?.auto_sync ?? false;
+		this.auto_sync_interval_minutes = s?.auto_sync_interval_minutes ?? 15;
+		this.auto_sync_baselined = s?.auto_sync_baselined ?? false;
+		this.auto_sync_seen = s?.auto_sync_seen ?? [];
 		if (s?.custom_host) {
 			this.custom_host = s.custom_host;
 		}

@@ -10,6 +10,14 @@ export class Settings extends PluginSettingTab {
 	private connectedMessage: HTMLElement;
 	// @ts-expect-error TS2564
 	private clientIdSetting: Setting;
+	// @ts-expect-error TS2564
+	private autoSyncSetting: Setting;
+	// @ts-expect-error TS2564
+	private autoSyncIntervalSetting: Setting;
+	// @ts-expect-error TS2564
+	private resetBaselineSetting: Setting;
+	// @ts-expect-error TS2564
+	private syncEverythingSetting: Setting;
 
 	constructor(app: App, private readonly plugin: Scrybble) {
 		super(app, plugin);
@@ -45,6 +53,7 @@ Default is "scrybble/"`)
 						this.plugin.settings.self_hosted = value;
 						await this.plugin.settings.save();
 						this.updateVisibility();
+						this.plugin.startAutoSync();
 					})
 			})
 
@@ -88,6 +97,44 @@ Default is "scrybble/"`)
 		this.connectedMessage = containerEl.createEl("p", {
 			text: "Connected to the official scrybble server, no additional configuration required."
 		});
+
+		this.autoSyncSetting = new Setting(containerEl)
+			.setName("Automatic sync")
+			.setDesc("Self-hosted only: periodically pull new reMarkable files into your vault automatically.")
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.settings.auto_sync)
+				.onChange(async (value) => {
+					this.plugin.settings.auto_sync = value;
+					await this.plugin.settings.save();
+					this.plugin.startAutoSync();
+				}));
+
+		this.autoSyncIntervalSetting = new Setting(containerEl)
+			.setName("Automatic sync interval (minutes)")
+			.setDesc("How often to check for new files. Minimum 1.")
+			.addText((text) => text
+				.setValue(String(this.plugin.settings.auto_sync_interval_minutes))
+				.onChange(async (value) => {
+					const n = parseInt(value, 10);
+					this.plugin.settings.auto_sync_interval_minutes = Number.isFinite(n) && n >= 1 ? n : 15;
+					await this.plugin.settings.save();
+					this.plugin.startAutoSync();
+				}));
+
+		this.resetBaselineSetting = new Setting(containerEl)
+			.setName("Reset auto-sync baseline")
+			.setDesc("Forget what auto-sync has seen and re-snapshot your current library as the new starting point. Downloads nothing.")
+			.addButton((btn) => btn
+				.setButtonText("Reset baseline")
+				.onClick(() => this.plugin.resetAutoSyncBaseline()));
+
+		this.syncEverythingSetting = new Setting(containerEl)
+			.setName("Sync entire library")
+			.setDesc("Pull every reMarkable file into your vault now (one-time backfill). This can be a lot of files.")
+			.addButton((btn) => btn
+				.setButtonText("Sync everything")
+				.setWarning()
+				.onClick(() => this.plugin.syncEntireLibrary()));
 
 		this.updateVisibility();
 	}
@@ -139,12 +186,20 @@ Default is "scrybble/"`)
 			this.clientSecretSetting.settingEl.style.display = "";
 			this.clientIdSetting.settingEl.style.display = "";
 			this.connectedMessage.style.display = "none";
+			this.autoSyncSetting.settingEl.style.display = "";
+			this.autoSyncIntervalSetting.settingEl.style.display = "";
+			this.resetBaselineSetting.settingEl.style.display = "";
+			this.syncEverythingSetting.settingEl.style.display = "";
 			this.updateClientFieldsVisibility();
 		} else {
 			this.endpointSetting.settingEl.style.display = "none";
 			this.clientSecretSetting.settingEl.style.display = "none";
 			this.clientIdSetting.settingEl.style.display = "none";
 			this.connectedMessage.style.display = "";
+			this.autoSyncSetting.settingEl.style.display = "none";
+			this.autoSyncIntervalSetting.settingEl.style.display = "none";
+			this.resetBaselineSetting.settingEl.style.display = "none";
+			this.syncEverythingSetting.settingEl.style.display = "none";
 		}
 	}
 }
